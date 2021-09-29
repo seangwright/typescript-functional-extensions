@@ -5,10 +5,14 @@
         "moduleResolution": "node",
         "emitDecoratorMetadata": true,
         "experimentalDecorators": true,
-        "target": "es5",
+        "esModuleInterop": true,
+        "target": "ES2020",
         "strict": true,
+        "paths": {
+            "@/src/*": ["./src/*"]
+        },
         "lib": [
-            "es2017",
+            "es2020",
             "dom"
         ],
     }

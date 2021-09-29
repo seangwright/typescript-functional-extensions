@@ -1,13 +1,16 @@
 {
   "version": "0.0.0",
   "scripts": {
-    "watch-all": "jest --watchAll"
+    "test": "jest",
+    "test:watch": "jest --watchAll"
   },
-  "dependencies": {
-    "typescript": "*"
-  },
+  "dependencies": {},
   "devDependencies": {
-    "jest": "^27.2.3",
-    "@types/jest": "*"
+    "typescript": "4.4.3",
+    "@babel/preset-typescript": "7.15.0",
+    "ts-jest": "27.0.5",
+    "@types/jest": "27.0.2",
+    "jest": "27.2.3",
+    "prettier": "2.4.1"
   }
 }
