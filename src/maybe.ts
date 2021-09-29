@@ -1,18 +1,32 @@
-type Selector<T, K> = (v: T) => K;
-type Predicate<T> = (v: T) => boolean;
-
-type OptionalSelector<T> = T extends Selector<infer U, infer V> ? V : never;
-
+/**
+ * Represents a value that might not exist
+ */
 export class maybe<T> {
-  private _hasValue: boolean;
-  private value?: T;
-
-  static from<T>(value: T): maybe<T> {
+  /**
+   * Creates a new maybe with a value
+   * @param value The value of the new maybe
+   * @returns 
+   */
+  static some<T>(value: T): maybe<T> {
     return new maybe(value);
   }
 
+  /**
+   * Creates a new maybe with no value
+   * @returns {maybe}
+   */
   static none<T>(): maybe<T> {
     return new maybe();
+  }
+
+  /**
+   * Creates a new maybe. If no value is provided, it is equivalent to calling maybe.none(), and
+   * if a value is provided, it is equivalent to calling maybe.some(val)
+   * @param value The value of the new maybe.
+   * @returns {maybe}
+   */
+   static from<T>(value: T | undefined): maybe<T> {
+    return new maybe(value);
   }
 
   static tryFirst<T>(values: T[]): maybe<T>;
@@ -61,67 +75,58 @@ export class maybe<T> {
     }
   }
 
+  private value: T | undefined;
+
   get hasValue(): boolean {
-    return this._hasValue;
+    return isDefined(this.value);
   }
 
   get hasNoValue(): boolean {
-    return !this._hasValue;
+    return !this.hasValue;
   }
 
-  constructor(value?: T) {
+  private constructor(value?: T) {
     if (value !== undefined && value !== null) {
       this.value = value;
-      this._hasValue = true;
     } else {
       this.value = undefined;
-      this._hasValue = false;
     }
   }
 
   getValueOrDefault(createDefault: () => T): T {
-    return this.hasValue ? this.value : createDefault();
+    return this.hasValue ? this.value! : createDefault();
   }
 
   getValueOrThrow(): T {
-    if (this.hasNoValue) {
-      throw Error('No value');
+    if (isDefined(this.value)) {
+      return this.value;
     }
 
-    return this.value;
+    throw Error('No value');
   }
 
   map<K>(selector: (value: T) => K): maybe<K> {
-    return this.hasNoValue ? maybe.none<K>() : maybe.from(selector(this.value));
+    return isDefined(this.value)
+      ? maybe.from(selector(this.value))
+      : maybe.none<K>();
   }
 
   bind<K>(selector: (value: T) => maybe<K>): maybe<K> {
-    return this.hasNoValue ? maybe.none<K>() : selector(this.value);
+    return isDefined(this.value) ? selector(this.value) : maybe.none<K>();
   }
 
-  match<K extends unknown>(matcher: {
-    some: (value: T) => K;
-    none: () => K;
-  }): K {
-    return this.hasValue ? matcher.some(this.value) : matcher.none();
+  match<K>(matcher: Matcher<T, K> | MatcherNoReturn<T>): K | never {
+    return isDefined(this.value) ? matcher.some(this.value) : matcher.none();
   }
 
-  execute(func: (value: T) => void): void {
-    if (this.hasValue) {
+  execute(func: (value: T) => never): void {
+    if (isDefined(this.value)) {
       func(this.value);
     }
   }
 
-  executeMatch(matcher: { some: (value: T) => void; none: () => void }): void {
-    if (this.hasValue) {
-      matcher.some(this.value);
-    } else {
-      matcher.none();
-    }
-  }
-
   or(fallback: (() => T) | maybe<T> | (() => maybe<T>)): maybe<T> {
-    if (this.hasValue) {
+    if (isDefined(this.value)) {
       return maybe.from(this.value);
     }
 
@@ -132,17 +137,36 @@ export class maybe<T> {
         ? maybeOrValue
         : maybe.from(maybeOrValue);
     } else {
-      return this.hasValue ? maybe.from(this.value) : fallback;
+      return fallback;
     }
   }
 
   toString(): string {
-    return this.hasValue ? this.value.toString() : 'No value';
+    return isDefined(this.value) ? `${this.value}` : 'No value';
   }
 
   equals(maybe: maybe<T>): boolean {
     return (
-      this.hasValue && maybe._hasValue && this.value == maybe.getValueOrThrow()
+      this.hasValue && maybe.hasValue && this.value == maybe.getValueOrThrow()
     );
   }
 }
+
+type Selector<T, K> = (v: T) => K;
+type Predicate<T> = (v: T) => boolean;
+
+function isDefined<T>(value: T | undefined): value is T {
+  return value !== undefined;
+}
+function isUndefined(value: unknown): value is undefined {
+  return value === undefined;
+}
+
+type Matcher<T, K> = {
+  some: (value: T) => K;
+  none: () => K;
+};
+type MatcherNoReturn<T> = {
+  some: (value: T) => never;
+  none: () => never;
+};
