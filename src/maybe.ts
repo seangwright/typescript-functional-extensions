@@ -1,3 +1,13 @@
+import {
+  Action,
+  ActionOfT,
+  isDefined,
+  isFunction,
+  Predicate,
+  SelectorT,
+  SelectorTK,
+} from './utilities';
+
 /**
  * Represents a value that might not exist
  */
@@ -5,7 +15,7 @@ export class maybe<T> {
   /**
    * Creates a new maybe with a value
    * @param value The value of the new maybe
-   * @returns 
+   * @returns
    */
   static some<T>(value: T): maybe<T> {
     return new maybe(value);
@@ -25,7 +35,7 @@ export class maybe<T> {
    * @param value The value of the new maybe.
    * @returns {maybe}
    */
-   static from<T>(value: T | undefined): maybe<T> {
+  static from<T>(value: T | undefined): maybe<T> {
     return new maybe(value);
   }
 
@@ -40,10 +50,10 @@ export class maybe<T> {
   }
 
   static choose<T>(maybes: maybe<T>[]): T[];
-  static choose<T, K>(maybes: maybe<T>[], selector: Selector<T, K>): K[];
+  static choose<T, K>(maybes: maybe<T>[], selector: SelectorTK<T, K>): K[];
   static choose<T, K>(
     maybes: maybe<T>[],
-    selector?: Selector<T, K>
+    selector?: SelectorTK<T, K>
   ): T[] | K[] {
     if (typeof selector === 'function') {
       const values: K[] = [];
@@ -93,8 +103,16 @@ export class maybe<T> {
     }
   }
 
-  getValueOrDefault(createDefault: () => T): T {
-    return this.hasValue ? this.value! : createDefault();
+  getValueOrDefault(createDefault: T | SelectorT<T>): T {
+    if (isDefined(this.value)) {
+      return this.value;
+    }
+
+    if (isFunction(createDefault)) {
+      return createDefault();
+    }
+
+    return createDefault;
   }
 
   getValueOrThrow(): T {
@@ -105,13 +123,13 @@ export class maybe<T> {
     throw Error('No value');
   }
 
-  map<K>(selector: (value: T) => K): maybe<K> {
+  map<K>(selector: SelectorTK<T, K>): maybe<K> {
     return isDefined(this.value)
       ? maybe.from(selector(this.value))
       : maybe.none<K>();
   }
 
-  bind<K>(selector: (value: T) => maybe<K>): maybe<K> {
+  bind<K>(selector: SelectorTK<T, maybe<K>>): maybe<K> {
     return isDefined(this.value) ? selector(this.value) : maybe.none<K>();
   }
 
@@ -119,13 +137,13 @@ export class maybe<T> {
     return isDefined(this.value) ? matcher.some(this.value) : matcher.none();
   }
 
-  execute(func: (value: T) => never): void {
+  execute(func: ActionOfT<T>): void {
     if (isDefined(this.value)) {
       func(this.value);
     }
   }
 
-  or(fallback: (() => T) | maybe<T> | (() => maybe<T>)): maybe<T> {
+  or(fallback: SelectorT<T> | maybe<T> | SelectorT<maybe<T>>): maybe<T> {
     if (isDefined(this.value)) {
       return maybe.from(this.value);
     }
@@ -152,21 +170,11 @@ export class maybe<T> {
   }
 }
 
-type Selector<T, K> = (v: T) => K;
-type Predicate<T> = (v: T) => boolean;
-
-function isDefined<T>(value: T | undefined): value is T {
-  return value !== undefined;
-}
-function isUndefined(value: unknown): value is undefined {
-  return value === undefined;
-}
-
 type Matcher<T, K> = {
-  some: (value: T) => K;
-  none: () => K;
+  some: SelectorTK<T, K>;
+  none: SelectorT<K>;
 };
 type MatcherNoReturn<T> = {
-  some: (value: T) => never;
-  none: () => never;
+  some: ActionOfT<T>;
+  none: Action;
 };
