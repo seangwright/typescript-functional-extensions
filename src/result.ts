@@ -1,77 +1,62 @@
-import {
-  ActionOfT,
-  isDefined,
-  isFunction,
-  never,
-  SelectorT,
-  SelectorTK,
-} from './utilities';
+import { IResult } from './iresult';
+import { isDefined, isFunction, SelectorT, SelectorTK } from './utilities';
 
-export class result<T, E> {
-  static success<T, E>(value: T): result<T, E> {
-    return new result({ value });
+export class Result implements IResult<never, string> {
+  static success(): Result {
+    return new Result({ isSuccess: true });
   }
 
-  static failure<T, E>(error: E): result<T, E> {
-    return new result({ error });
+  static failure(error: string): Result {
+    return new Result({ error, isSuccess: false });
   }
-
-  private value: T | undefined;
-  private error: E | undefined;
 
   get isSuccess(): boolean {
-    return isDefined(this.value);
+    return !this.isFailure;
   }
 
   get isFailure(): boolean {
-    return !this.isSuccess;
+    return isDefined(this.error);
   }
 
-  protected constructor({ value, error }: { value?: T; error?: E }) {
-    if (value !== null && value !== undefined) {
-      this.value = value;
-      this.error = undefined;
-    } else if (error !== null && error !== undefined) {
-      this.value = undefined;
-      this.error = error;
-    } else {
-      throw new Error('Value or Error must be non-null/undefined');
+  private error: string | undefined;
+
+  protected constructor({
+    error,
+    isSuccess,
+  }: {
+    error?: string;
+    isSuccess: boolean;
+  }) {
+    if (isDefined(error) && isSuccess) {
+      throw new Error('Error cannot be defined for successful Result');
+    } else if (!isDefined(error) && !isSuccess) {
+      throw new Error('Error must be defined for failed Result');
     }
+
+    this.error = error;
   }
 
-  getValueOrDefault(createDefault: T | SelectorT<T>): T {
-    if (isDefined(this.value)) {
-      return this.value;
-    }
-
-    if (isFunction(createDefault)) {
-      return createDefault();
-    }
-
-    return createDefault;
+  failure(error: string): Result {
+    return Result.failure(error);
   }
 
-  getValueOrThrow(): T {
-    if (isDefined(this.value)) {
-      return this.value;
-    }
-
-    throw Error('No value');
+  success(value: never): Result {
+    return Result.success();
   }
 
-  getErrorOrDefault(createDefault: E | SelectorT<E>): E {
+  getErrorOrDefault(defaultOrFactory: string | SelectorT<string>): string {
     if (isDefined(this.error)) {
       return this.error;
     }
 
-    if (isFunction(createDefault)) {
-      return createDefault();
+    if (isFunction(defaultOrFactory)) {
+      return defaultOrFactory();
     }
 
-    return createDefault;
+    return defaultOrFactory;
   }
 
-  getErrorOrThrow(): E {
+  getErrorOrThrow(): string {
     if (isDefined(this.error)) {
       return this.error;
     }
@@ -79,46 +64,17 @@ export class result<T, E> {
     throw Error('No error');
   }
 
-  map<U>(selector: SelectorTK<T, U>): result<U, E> {
-    return isDefined(this.value)
-      ? new result<U, E>({ value: selector(this.value) })
-      : new result<U, E>({ error: this.error });
+  mapError(selector: SelectorTK<string, string>): Result {
+    return isDefined(this.error)
+      ? Result.failure(selector(this.error))
+      : Result.success();
   }
 
-  bind<U>(selector: SelectorTK<T, result<U, E>>): result<U, E> {
-    return isDefined(this.value)
-      ? selector(this.value)
-      : new result<U, E>({ error: this.error });
-  }
-
-  tap(action: ActionOfT<T>): result<T, E> {
-    if (isDefined(this.value)) {
-      action(this.value);
-    }
-
-    return this;
-  }
-
-  match<U, V>(
-    matcher: Matcher<T, E, U, V> | MatcherNoReturn<T, E>
-  ): U | V | never {
-    if (isDefined(this.value)) {
-      return matcher.success(this.value);
-    }
-    if (isDefined(this.error)) {
-      return matcher.error(this.error);
-    }
-
-    return never();
+  bind(selector: Result): Result;
+  bind<TResult extends Result | IResult<TValue, TError>, TValue, TError>(
+    selector: SelectorT<TResult>,
+    failureFactory?: SelectorTK<string, TResult>
+  ): TResult {
+    return !isDefined(this.error) ? selector() : failureFactory(this.error);
   }
 }
-
-type Matcher<T, E, U, V> = {
-  success: SelectorTK<T, U>;
-  error: SelectorTK<E, V>;
-};
-
-type MatcherNoReturn<T, E> = {
-  success: ActionOfT<T>;
-  error: ActionOfT<E>;
-};

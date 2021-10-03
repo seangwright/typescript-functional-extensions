@@ -1,15 +1,15 @@
-import { maybe } from '@/src/maybe';
+import { Maybe } from '@/src/maybe';
 
-describe('maybe', () => {
+describe('Maybe', () => {
   test('some constructs with a string value', () => {
-    const sut = maybe.some('val');
+    const sut = Maybe.some('val');
 
     expect(sut.hasNoValue).toBe(false);
     expect(sut.hasValue).toBe(true);
   });
 
   test('none constructs with no string value', () => {
-    const sut = maybe.none<string>();
+    const sut = Maybe.none<string>();
 
     expect(sut.hasNoValue).toBe(true);
     expect(sut.hasValue).toBe(false);
@@ -17,14 +17,14 @@ describe('maybe', () => {
 
   describe('from', () => {
     test('constructs with a string value', () => {
-      const sut = maybe.from('val');
+      const sut = Maybe.from('val');
 
       expect(sut.hasNoValue).toBe(false);
       expect(sut.hasValue).toBe(true);
     });
 
     test('constructs with undefined', () => {
-      const sut = maybe.from<string>(undefined);
+      const sut = Maybe.from<string>(undefined);
 
       expect(sut.hasNoValue).toBe(true);
       expect(sut.hasValue).toBe(false);

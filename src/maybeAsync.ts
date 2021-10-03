@@ -1,26 +1,29 @@
-import { maybe } from './maybe';
+import { Maybe } from './maybe';
+import { ResultTEAsync } from './resultTEAsync';
 import { SelectorTK } from './utilities';
 
-export class maybeAsync<T> {
-  static from<T>(promise: Promise<maybe<T>>): maybeAsync<T> {
-    return new maybeAsync(promise);
+export class MaybeAsync<TValue> {
+  static from<TValue>(promise: Promise<Maybe<TValue>>): MaybeAsync<TValue> {
+    return new MaybeAsync(promise);
   }
 
-  private value: Promise<maybe<T>>;
+  private value: Promise<Maybe<TValue>>;
 
-  protected constructor(value: Promise<maybe<T>>) {
+  protected constructor(value: Promise<Maybe<TValue>>) {
     this.value = value;
   }
 
-  map<K>(selector: SelectorTK<T, K>): maybeAsync<K> {
-    return new maybeAsync(
-      this.value.then((m) =>
-        m.hasValue ? maybe.some(selector(m.getValueOrThrow())) : maybe.none<K>()
-      )
-    );
+  map<TNewValue>(
+    selector: SelectorTK<TValue, TNewValue>
+  ): MaybeAsync<TNewValue> {
+    return MaybeAsync.from(this.value.then((m) => m.map(selector)));
   }
 
-  async toPromise(): Promise<maybe<T>> {
+  toResult<TError>(error: TError): ResultTEAsync<TValue, TError> {
+    return ResultTEAsync.from(this.value.then((m) => m.toResult(error)));
+  }
+
+  async toPromise(): Promise<Maybe<TValue>> {
     return this.value;
   }
 }
