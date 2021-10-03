@@ -18,3 +18,7 @@ export function isUndefined(value: unknown): value is undefined {
 export function isFunction(value: unknown): value is Function {
   return typeof value === 'function';
 }
+
+export function isPromise<TValue>(value: unknown): value is Promise<TValue> {
+  return value instanceof Promise;
+}

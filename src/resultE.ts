@@ -1,6 +1,11 @@
 import { IResult } from './iresult';
 import { isDefined, isFunction, SelectorT, SelectorTK } from './utilities';
 
+/**
+ * Represents an operation that has either succeeded or failed
+ * A successful operation produces no value
+ * @template TError The type of value produced by a failed operation
+ */
 export class ResultE<TError> implements IResult<never, TError> {
   static success<TError>(): ResultE<TError> {
     return new ResultE({ isSuccess: true });
@@ -38,7 +43,7 @@ export class ResultE<TError> implements IResult<never, TError> {
   failure(error: TError): ResultE<TError> {
     return ResultE.failure(error);
   }
-  success(value: never): ResultE<TError> {
+  success(): ResultE<TError> {
     return ResultE.success();
   }
 

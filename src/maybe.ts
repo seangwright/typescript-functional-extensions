@@ -1,3 +1,17 @@
+import { Result } from './result';
+import { ResultE } from './resultE';
+import {
+  isResult,
+  isResultE,
+  isResultT,
+  isResultTE,
+  ResultEType,
+  Results,
+  ResultTEType,
+  ResultTType,
+  ResultType,
+} from './results';
+import { ResultT } from './resultT';
 import { ResultTE } from './resultTE';
 import {
   Action,
@@ -105,12 +119,8 @@ export class Maybe<TValue> {
     return !this.hasValue;
   }
 
-  private constructor(value?: TValue) {
-    if (value !== undefined && value !== null) {
-      this.value = value;
-    } else {
-      this.value = undefined;
-    }
+  protected constructor(value?: TValue) {
+    this.value = value;
   }
 
   getValueOrDefault(createDefault: TValue | SelectorT<TValue>): TValue {
@@ -177,7 +187,60 @@ export class Maybe<TValue> {
     }
   }
 
-  toResult<TError>(error: TError): ResultTE<TValue, TError> {
+  toResult<TResult extends Result>(error: string, type: ResultType): TResult;
+  toResult<TResult extends ResultT<TValue>>(
+    error: string,
+    type: ResultTType
+  ): TResult;
+  toResult<TResult extends ResultE<TError>, TError>(
+    error: TError,
+    type: ResultEType
+  ): TResult;
+  toResult<TResult extends ResultTE<TValue, TError>, TError>(
+    error: TError,
+    type: ResultTEType
+  ): TResult;
+
+  toResult<
+    TResult extends
+      | Result
+      | ResultT<TValue>
+      | ResultE<TError>
+      | ResultTE<TValue, TError>,
+    TError
+  >(error: string | TError, type: Results): TResult {
+    if (isResult(type) && typeof error === 'string') {
+      return isDefined(this.value)
+        ? (type.success() as TResult)
+        : (type.failure(error) as TResult);
+    } else if (isResultE<TError>(type) && typeof error !== 'string') {
+      return isDefined(this.value)
+        ? (type.success() as TResult)
+        : (type.failure(error) as TResult);
+    } else if (isResultT(type) && typeof error === 'string') {
+      return isDefined(this.value)
+        ? (type.success(this.value) as TResult)
+        : (type.failure(error) as TResult);
+    } else if (isResultTE(type) && typeof error !== 'string') {
+      return isDefined(this.value)
+        ? (type.success(this.value) as TResult)
+        : (type.failure(error) as TResult);
+    }
+
+    throw new Error('Invalid parameters. Result and error types must match');
+  }
+
+  toResultT(error: string): ResultT<TValue> {
+    return isDefined(this.value)
+      ? ResultT.success(this.value)
+      : ResultT.failure(error);
+  }
+
+  toResultE<TError>(error: TError): ResultE<TError> {
+    return isDefined(this.value) ? ResultE.success() : ResultE.failure(error);
+  }
+
+  toResultTE<TError>(error: TError): ResultTE<TValue, TError> {
     return isDefined(this.value)
       ? ResultTE.success(this.value)
       : ResultTE.failure(error);
@@ -194,11 +257,11 @@ export class Maybe<TValue> {
   }
 }
 
-type Matcher<TValue, TNewValue> = {
+export type Matcher<TValue, TNewValue> = {
   some: SelectorTK<TValue, TNewValue>;
   none: SelectorT<TNewValue>;
 };
-type MatcherNoReturn<TValue> = {
+export type MatcherNoReturn<TValue> = {
   some: ActionOfT<TValue>;
   none: Action;
 };

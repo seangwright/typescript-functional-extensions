@@ -1,6 +1,13 @@
 import { IResult } from './iresult';
+import { ResultAsync } from './resultAsync';
+import { ResultT } from './resultT';
+import { ResultTAsync } from './resultTAsync';
 import { isDefined, isFunction, SelectorT, SelectorTK } from './utilities';
 
+/**
+ * Represents an operation that has either succeeded or failed
+ * A successful operation produces no value and the failure state is a string
+ */
 export class Result implements IResult<never, string> {
   static success(): Result {
     return new Result({ isSuccess: true });
@@ -40,7 +47,7 @@ export class Result implements IResult<never, string> {
     return Result.failure(error);
   }
 
-  success(value: never): Result {
+  success(): Result {
     return Result.success();
   }
 
@@ -64,17 +71,29 @@ export class Result implements IResult<never, string> {
     throw Error('No error');
   }
 
+  map<TValue>(selector: SelectorT<TValue>): ResultT<TValue> {
+    return isDefined(this.error)
+      ? ResultT.failure(this.error)
+      : ResultT.success(selector());
+  }
+
   mapError(selector: SelectorTK<string, string>): Result {
     return isDefined(this.error)
       ? Result.failure(selector(this.error))
       : Result.success();
   }
 
-  bind(selector: Result): Result;
-  bind<TResult extends Result | IResult<TValue, TError>, TValue, TError>(
+  bind<TResult extends Result | ResultT<TValue>, TValue>(
     selector: SelectorT<TResult>,
-    failureFactory?: SelectorTK<string, TResult>
+    createFailure: (error: string) => TResult
   ): TResult {
-    return !isDefined(this.error) ? selector() : failureFactory(this.error);
+    return isDefined(this.error) ? createFailure(this.error) : selector();
+  }
+
+  bindAsync<TResultAsync extends ResultAsync | ResultTAsync<TValue>, TValue>(
+    selector: SelectorT<TResultAsync>,
+    createResultAsync: (error: string) => TResultAsync
+  ): TResultAsync {
+    return isDefined(this.error) ? createResultAsync(this.error) : selector();
   }
 }

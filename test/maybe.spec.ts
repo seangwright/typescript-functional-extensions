@@ -1,4 +1,5 @@
 import { Maybe } from '@/src/maybe';
+import { ResultTE } from '@/src/resultTE';
 
 describe('Maybe', () => {
   test('some constructs with a string value', () => {
@@ -28,6 +29,10 @@ describe('Maybe', () => {
 
       expect(sut.hasNoValue).toBe(true);
       expect(sut.hasValue).toBe(false);
+
+      const result = sut.toResult(3, ResultTE);
+
+      expect(result.getErrorOrThrow()).toBe(3);
     });
   });
 });

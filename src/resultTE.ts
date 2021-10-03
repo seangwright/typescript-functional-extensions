@@ -9,6 +9,11 @@ import {
   SelectorTK,
 } from './utilities';
 
+/**
+ * Represents an operation that has either succeeded or failed
+ * @template TValue The type of value produced by a successful operation
+ * @template TError The type of value produced by a failed operation
+ */
 export class ResultTE<TValue, TError> implements IResult<TValue, TError> {
   static success<TValue, TError>(value: TValue): ResultTE<TValue, TError> {
     return new ResultTE({ value, isSuccess: true });
