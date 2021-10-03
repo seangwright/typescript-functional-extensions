@@ -224,10 +224,3 @@ type ResultMatcherNoReturn<T, E> = {
   success: ActionOfT<T>;
   error: ActionOfT<E>;
 };
-
-const rsu = Result.success();
-const rss = Result.success('a');
-
-const rfu = Result.failure('');
-const rfs = Result.failure<string>('');
-const rfn = Result.failure<boolean, number>(3);
