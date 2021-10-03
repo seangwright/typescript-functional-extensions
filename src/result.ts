@@ -5,6 +5,7 @@ import {
   isDefined,
   isFunction,
   never,
+  Predicate,
   SelectorT,
   SelectorTK,
 } from './utilities';
@@ -105,12 +106,37 @@ export class Result<TValue = Unit, TError = string> {
     throw Error('No error');
   }
 
+  ensure(
+    predicate: Predicate<TValue>,
+    errorOrErrorCreator: TError | SelectorTK<TValue, TError>
+  ): Result<TValue, TError> {
+    if (isDefined(this.state.error)) {
+      return this;
+    }
+
+    if (!predicate(this.state.value)) {
+      return isFunction(errorOrErrorCreator)
+        ? Result.failure(errorOrErrorCreator(this.state.value))
+        : Result.failure(errorOrErrorCreator);
+    }
+
+    return this;
+  }
+
   map<TNewValue>(
     selector: SelectorTK<TValue, TNewValue>
   ): Result<TNewValue, TError> {
     return isDefined(this.state.value)
       ? Result.success(selector(this.state.value))
       : Result.failure(this.state.error!);
+  }
+
+  mapError<TNewError>(
+    selector: SelectorTK<TError, TNewError>
+  ): Result<TValue, TNewError> {
+    return isDefined(this.state.error)
+      ? Result.failure(selector(this.getErrorOrThrow()))
+      : Result.success(this.state.value);
   }
 
   bind<TNewValue>(
@@ -137,6 +163,23 @@ export class Result<TValue = Unit, TError = string> {
     return this;
   }
 
+  tapIf(
+    conditionOrPredicate: boolean | Predicate<TValue>,
+    action: ActionOfT<TValue>
+  ): Result<TValue, TError> {
+    if (!isDefined(this.state.value)) {
+      return this;
+    }
+
+    if (isFunction(conditionOrPredicate)) {
+      conditionOrPredicate(this.state.value) && action(this.state.value);
+    } else {
+      conditionOrPredicate && action(this.state.value);
+    }
+
+    return this;
+  }
+
   match<TNewValue>(
     matcher:
       | ResultMatcher<TValue, TError, TNewValue>
@@ -150,6 +193,20 @@ export class Result<TValue = Unit, TError = string> {
     }
 
     return never();
+  }
+
+  finally<TNewValue>(
+    selector: SelectorTK<Result<TValue, TError>, TNewValue>
+  ): TNewValue {
+    return selector(this);
+  }
+
+  onFailure(action: ActionOfT<TError>): Result<TValue, TError> {
+    if (isDefined(this.state.error)) {
+      action(this.state.error);
+    }
+
+    return this;
   }
 }
 
