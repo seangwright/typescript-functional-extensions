@@ -10,11 +10,27 @@ import {
   SelectorTK,
 } from './utilities';
 
+/**
+ * Represents a successful or failed operation
+ */
 export class Result<TValue = Unit, TError = string> {
-  static success<TError = string>(): Result<Unit, TError>;
+  /**
+   * Creates a new successful Result with a string error type
+   * and Unit value type
+   */
+  static success(): Result<Unit, string>;
+  /**
+   * Creates a new successful Result with the given value
+   * @param value the result of the successful operation
+   */
   static success<TValue, TError = string>(
     value: TValue
   ): Result<TValue, TError>;
+  /**
+   * Creates a new successful Result with the given value
+   * @param value the result of the successful operation
+   * @returns new successful Result
+   */
   static success<TValue, TError = string>(
     value?: never | TValue
   ): Result<TValue, TError> {
@@ -26,34 +42,51 @@ export class Result<TValue = Unit, TError = string> {
         }) as Result<TValue, TError>);
   }
 
+  /**
+   * Creates a new failed Result
+   * @param error the error of the failed operation
+   * @returns new failed Result
+   */
   static failure<TValue = Unit, TError = string>(
     error: TError
   ): Result<TValue, TError> {
     return new Result({ error, isSuccess: false });
   }
 
+  /**
+   * True if the result operation succeeded
+   */
   get isSuccess(): boolean {
     return isDefined(this.state.value);
   }
 
+  /**
+   * True if the result operation failed.
+   */
   get isFailure(): boolean {
     return !this.isSuccess;
   }
 
+  /**
+   * The internal state of the Result
+   */
   private state: ResultState<TValue, TError> = {
     value: undefined,
     error: undefined,
   };
 
-  protected constructor({
-    value,
-    error,
-    isSuccess,
-  }: {
+  /**
+   * Creates a new Result instance in a guaranteed valid state
+   * @param {{ value?: TValue, error?: TError, isSuccess: boolean }} state the initial state of the Result
+   * @throws {Error} if the provided initial state is invalid
+   */
+  protected constructor(state: {
     value?: TValue;
     error?: TError;
     isSuccess: boolean;
   }) {
+    const { value, error, isSuccess } = state;
+
     if (isDefined(value) && !isSuccess) {
       throw new Error('Value cannot be defined for failed ResultAll');
     } else if (isDefined(error) && isSuccess) {
@@ -66,18 +99,28 @@ export class Result<TValue = Unit, TError = string> {
     this.state.error = error;
   }
 
-  getValueOrDefault(createDefault: TValue | SelectorT<TValue>): TValue {
+  /**
+   * Gets the Result's inner value
+   * @param defaultOrValueCreator A value or value creator function
+   * @returns {TValue} The Result's value or a default value if the Result failed
+   */
+  getValueOrDefault(defaultOrValueCreator: TValue | SelectorT<TValue>): TValue {
     if (isDefined(this.state.value)) {
       return this.state.value;
     }
 
-    if (isFunction(createDefault)) {
-      return createDefault();
+    if (isFunction(defaultOrValueCreator)) {
+      return defaultOrValueCreator();
     }
 
-    return createDefault;
+    return defaultOrValueCreator;
   }
 
+  /**
+   * Gets the Result's inner value
+   * @returns {TValue} the inner value if the result suceeded
+   * @throws {Error} if the result failed
+   */
   getValueOrThrow(): TValue {
     if (isDefined(this.state.value)) {
       return this.state.value;
@@ -86,18 +129,28 @@ export class Result<TValue = Unit, TError = string> {
     throw Error('No value');
   }
 
-  getErrorOrDefault(defaultOrFactory: TError | SelectorT<TError>): TError {
+  /**
+   * Gets the Result's inner error
+   * @param defaultOrErrorCreator An error or error creator function
+   * @returns {TError} The Result's error or a default error if the Result succeeded
+   */
+  getErrorOrDefault(defaultOrErrorCreator: TError | SelectorT<TError>): TError {
     if (isDefined(this.state.error)) {
       return this.state.error;
     }
 
-    if (isFunction(defaultOrFactory)) {
-      return defaultOrFactory();
+    if (isFunction(defaultOrErrorCreator)) {
+      return defaultOrErrorCreator();
     }
 
-    return defaultOrFactory;
+    return defaultOrErrorCreator;
   }
 
+  /**
+   * Get's the Result's inner error
+   * @returns {TError} the inner error if the operation failed
+   * @throws {Error} if the result succeeded
+   */
   getErrorOrThrow(): TError {
     if (isDefined(this.state.error)) {
       return this.state.error;
