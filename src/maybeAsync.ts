@@ -1,9 +1,5 @@
 import { Matcher, MatcherNoReturn, Maybe } from './maybe';
-import { Result } from './result';
 import { ResultAsync } from './resultAsync';
-import { ResultEAsync } from './resultEAsync';
-import { ResultTAsync } from './resultTAsync';
-import { ResultTEAsync } from './resultTEAsync';
 import { ActionOfT, isPromise, SelectorT, SelectorTK } from './utilities';
 
 export class MaybeAsync<TValue> {
@@ -46,7 +42,7 @@ export class MaybeAsync<TValue> {
   bind<TNewValue>(
     selector: SelectorTK<TValue, Maybe<TNewValue>>
   ): MaybeAsync<TNewValue> {
-    return MaybeAsync.from(this.value.then((m) => m.bind((v) => selector(v))));
+    return MaybeAsync.from(this.value.then((m) => m.bind(selector)));
   }
 
   match<TNewValue>(
@@ -66,19 +62,7 @@ export class MaybeAsync<TValue> {
   }
 
   toResult(error: string): ResultAsync {
-    return ResultAsync.from(this.value.then((m) => m.toResult(error, Result)));
-  }
-
-  toResultT(error: string): ResultTAsync<TValue> {
-    return ResultTAsync.from(this.value.then((m) => m.toResultT(error)));
-  }
-
-  toResultE<TError>(error: TError): ResultEAsync<TError> {
-    return ResultEAsync.from(this.value.then((m) => m.toResultE(error)));
-  }
-
-  toResultTEAsync<TError>(error: TError): ResultTEAsync<TValue, TError> {
-    return ResultTEAsync.from(this.value.then((m) => m.toResultTE(error)));
+    return ResultAsync.from(this.value.then((m) => m.toResult(error)));
   }
 
   async toPromise(): Promise<Maybe<TValue>> {

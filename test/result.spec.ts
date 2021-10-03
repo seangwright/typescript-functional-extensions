@@ -1,6 +1,5 @@
 import { Result } from '@/src/result';
-import { ResultT } from '@/src/resultT';
-import { ResultTAsync } from '@/src/resultTAsync';
+import { ResultAsync } from '@/src/resultAsync';
 
 describe('Result', () => {
   test('success constructs with a successful state', () => {
@@ -18,10 +17,10 @@ describe('Result', () => {
   });
 
   test('bind maps one result to another', () => {
-    const resultNumber = ResultT.success(2);
+    const resultNumber = Result.success(2);
     const sut = Result.success();
 
-    const newResult = sut.bind(() => resultNumber, ResultT.failure);
+    const newResult = sut.bind(() => resultNumber);
 
     expect(newResult.isSuccess).toBe(true);
     expect(newResult.getValueOrThrow()).toBe(2);
@@ -30,11 +29,9 @@ describe('Result', () => {
   test('bindAsync maps one result to an async result', async () => {
     const sut = Result.success();
 
-    const resultAsync = ResultTAsync.from(Promise.resolve(ResultT.success(2)));
+    const resultAsync = ResultAsync.from(Promise.resolve(Result.success(2)));
 
-    const newResult = await sut
-      .bindAsync(() => resultAsync, ResultTAsync.failure)
-      .toPromise();
+    const newResult = await sut.bindAsync(() => resultAsync).toPromise();
 
     expect(newResult.isSuccess).toBe(true);
     expect(newResult.getValueOrThrow()).toBe(2);

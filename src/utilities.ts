@@ -11,14 +11,9 @@ export const never: Action = () => {
 export function isDefined<T>(value: T | undefined): value is T {
   return value !== undefined;
 }
-export function isUndefined(value: unknown): value is undefined {
-  return value === undefined;
-}
-
 export function isFunction(value: unknown): value is Function {
   return typeof value === 'function';
 }
-
 export function isPromise<TValue>(value: unknown): value is Promise<TValue> {
   return value instanceof Promise;
 }

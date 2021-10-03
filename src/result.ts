@@ -1,59 +1,93 @@
-import { IResult } from './iresult';
 import { ResultAsync } from './resultAsync';
-import { ResultT } from './resultT';
-import { ResultTAsync } from './resultTAsync';
-import { isDefined, isFunction, SelectorT, SelectorTK } from './utilities';
+import { Unit } from './unit';
+import {
+  ActionOfT,
+  isDefined,
+  isFunction,
+  never,
+  SelectorT,
+  SelectorTK,
+} from './utilities';
 
-/**
- * Represents an operation that has either succeeded or failed
- * A successful operation produces no value and the failure state is a string
- */
-export class Result implements IResult<never, string> {
-  static success(): Result {
-    return new Result({ isSuccess: true });
+export class Result<TValue = Unit, TError = string> {
+  static success<TError = string>(): Result<Unit, TError>;
+  static success<TValue, TError = string>(
+    value: TValue
+  ): Result<TValue, TError>;
+  static success<TValue, TError = string>(
+    value?: never | TValue
+  ): Result<TValue, TError> {
+    return isDefined(value)
+      ? new Result({ value, isSuccess: true })
+      : (new Result<Unit, TError>({
+          value: Unit.Instance,
+          isSuccess: true,
+        }) as Result<TValue, TError>);
   }
 
-  static failure(error: string): Result {
+  static failure<TValue = Unit, TError = string>(
+    error: TError
+  ): Result<TValue, TError> {
     return new Result({ error, isSuccess: false });
   }
 
   get isSuccess(): boolean {
-    return !this.isFailure;
+    return isDefined(this.state.value);
   }
 
   get isFailure(): boolean {
-    return isDefined(this.error);
+    return !this.isSuccess;
   }
 
-  private error: string | undefined;
+  private state: ResultState<TValue, TError> = {
+    value: undefined,
+    error: undefined,
+  };
 
   protected constructor({
+    value,
     error,
     isSuccess,
   }: {
-    error?: string;
+    value?: TValue;
+    error?: TError;
     isSuccess: boolean;
   }) {
-    if (isDefined(error) && isSuccess) {
-      throw new Error('Error cannot be defined for successful Result');
-    } else if (!isDefined(error) && !isSuccess) {
-      throw new Error('Error must be defined for failed Result');
+    if (isDefined(value) && !isSuccess) {
+      throw new Error('Value cannot be defined for failed ResultAll');
+    } else if (isDefined(error) && isSuccess) {
+      throw new Error('Error cannot be defined for successful ResultAll');
+    } else if (!isDefined(value) && !isDefined(error)) {
+      throw new Error('Value or Error must be defined');
     }
 
-    this.error = error;
+    this.state.value = value;
+    this.state.error = error;
   }
 
-  failure(error: string): Result {
-    return Result.failure(error);
+  getValueOrDefault(createDefault: TValue | SelectorT<TValue>): TValue {
+    if (isDefined(this.state.value)) {
+      return this.state.value;
+    }
+
+    if (isFunction(createDefault)) {
+      return createDefault();
+    }
+
+    return createDefault;
   }
 
-  success(): Result {
-    return Result.success();
+  getValueOrThrow(): TValue {
+    if (isDefined(this.state.value)) {
+      return this.state.value;
+    }
+
+    throw Error('No value');
   }
 
-  getErrorOrDefault(defaultOrFactory: string | SelectorT<string>): string {
-    if (isDefined(this.error)) {
-      return this.error;
+  getErrorOrDefault(defaultOrFactory: TError | SelectorT<TError>): TError {
+    if (isDefined(this.state.error)) {
+      return this.state.error;
     }
 
     if (isFunction(defaultOrFactory)) {
@@ -63,37 +97,80 @@ export class Result implements IResult<never, string> {
     return defaultOrFactory;
   }
 
-  getErrorOrThrow(): string {
-    if (isDefined(this.error)) {
-      return this.error;
+  getErrorOrThrow(): TError {
+    if (isDefined(this.state.error)) {
+      return this.state.error;
     }
 
     throw Error('No error');
   }
 
-  map<TValue>(selector: SelectorT<TValue>): ResultT<TValue> {
-    return isDefined(this.error)
-      ? ResultT.failure(this.error)
-      : ResultT.success(selector());
+  map<TNewValue>(
+    selector: SelectorTK<TValue, TNewValue>
+  ): Result<TNewValue, TError> {
+    return isDefined(this.state.value)
+      ? Result.success(selector(this.state.value))
+      : Result.failure(this.state.error!);
   }
 
-  mapError(selector: SelectorTK<string, string>): Result {
-    return isDefined(this.error)
-      ? Result.failure(selector(this.error))
-      : Result.success();
+  bind<TNewValue>(
+    selector: SelectorTK<TValue, Result<TNewValue, TError>>
+  ): Result<TNewValue, TError> {
+    return isDefined(this.state.value)
+      ? selector(this.state.value)
+      : Result.failure(this.state.error!);
   }
 
-  bind<TResult extends Result | ResultT<TValue>, TValue>(
-    selector: SelectorT<TResult>,
-    createFailure: (error: string) => TResult
-  ): TResult {
-    return isDefined(this.error) ? createFailure(this.error) : selector();
+  bindAsync<TNewValue>(
+    selector: SelectorTK<TValue, ResultAsync<TNewValue, TError>>
+  ): ResultAsync<TNewValue, TError> {
+    return isDefined(this.state.value)
+      ? selector(this.state.value)
+      : ResultAsync.failure(this.getErrorOrThrow());
   }
 
-  bindAsync<TResultAsync extends ResultAsync | ResultTAsync<TValue>, TValue>(
-    selector: SelectorT<TResultAsync>,
-    createResultAsync: (error: string) => TResultAsync
-  ): TResultAsync {
-    return isDefined(this.error) ? createResultAsync(this.error) : selector();
+  tap(action: ActionOfT<TValue>): Result<TValue, TError> {
+    if (isDefined(this.state.value)) {
+      action(this.state.value);
+    }
+
+    return this;
+  }
+
+  match<TNewValue>(
+    matcher:
+      | ResultMatcher<TValue, TError, TNewValue>
+      | ResultMatcherNoReturn<TValue, TError>
+  ): TNewValue | never {
+    if (isDefined(this.state.value)) {
+      return matcher.success(this.state.value);
+    }
+    if (isDefined(this.state.error)) {
+      return matcher.error(this.state.error);
+    }
+
+    return never();
   }
 }
+
+type ResultState<TValue, TError> = {
+  value?: TValue;
+  error?: TError;
+};
+
+type ResultMatcher<TValue, TError, TNewValue> = {
+  success: SelectorTK<TValue, TNewValue>;
+  error: SelectorTK<TError, TNewValue>;
+};
+
+type ResultMatcherNoReturn<T, E> = {
+  success: ActionOfT<T>;
+  error: ActionOfT<E>;
+};
+
+const rsu = Result.success();
+const rss = Result.success('a');
+
+const rfu = Result.failure('');
+const rfs = Result.failure<string>('');
+const rfn = Result.failure<boolean, number>(3);
