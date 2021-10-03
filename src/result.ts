@@ -114,7 +114,7 @@ export class Result<TValue = Unit, TError = string> {
       return this;
     }
 
-    if (!predicate(this.state.value)) {
+    if (isDefined(this.state.value) && !predicate(this.state.value)) {
       return isFunction(errorOrErrorCreator)
         ? Result.failure(errorOrErrorCreator(this.state.value))
         : Result.failure(errorOrErrorCreator);
@@ -136,7 +136,7 @@ export class Result<TValue = Unit, TError = string> {
   ): Result<TValue, TNewError> {
     return isDefined(this.state.error)
       ? Result.failure(selector(this.getErrorOrThrow()))
-      : Result.success(this.state.value);
+      : Result.success(this.state.value!);
   }
 
   bind<TNewValue>(
