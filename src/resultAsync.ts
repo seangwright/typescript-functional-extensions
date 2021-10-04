@@ -1,6 +1,15 @@
 import { Result } from './result';
 import { Unit } from './unit';
-import { isDefined, isPromise, SelectorTK } from './utilities';
+import {
+  ActionOfT,
+  isDefined,
+  isPromise,
+  Predicate,
+  ResultMatcher,
+  ResultMatcherNoReturn,
+  SelectorT,
+  SelectorTK,
+} from './utilities';
 
 export class ResultAsync<TValue = Unit, TError = string> {
   static from<TValue, TError>(
@@ -47,16 +56,89 @@ export class ResultAsync<TValue = Unit, TError = string> {
     this.value = value;
   }
 
+  get isSuccess(): Promise<boolean> {
+    return this.value.then((r) => r.isSuccess);
+  }
+
+  get isFailure(): Promise<boolean> {
+    return this.value.then((r) => r.isFailure);
+  }
+
+  getValueOrThrow(): Promise<TValue> {
+    return this.value.then((r) => r.getValueOrThrow());
+  }
+
+  getValueOrDeafult(
+    defaultOrValueCreator: TValue | SelectorT<TValue>
+  ): Promise<TValue> {
+    return this.value.then((r) => r.getValueOrDefault(defaultOrValueCreator));
+  }
+
+  getErrorOrThrow(): Promise<TError> {
+    return this.value.then((r) => r.getErrorOrThrow());
+  }
+
+  getErrorOrDefault(
+    defaultOrErrorCreator: TError | SelectorT<TError>
+  ): Promise<TError> {
+    return this.value.then((r) => r.getErrorOrDefault(defaultOrErrorCreator));
+  }
+
   map<TNewValue>(
     selector: SelectorTK<TValue, TNewValue>
   ): ResultAsync<TNewValue, TError> {
     return new ResultAsync(this.value.then((r) => r.map(selector)));
   }
 
+  mapAsync<TNewValue>(
+    selector: SelectorTK<TValue, Promise<TNewValue>>
+  ): ResultAsync<TNewValue, TError> {
+    return new ResultAsync(
+      this.value.then((r) => r.mapAsync(selector).toPromise())
+    );
+  }
+
+  mapError<TNewError>(
+    selector: SelectorTK<TError, TNewError>
+  ): ResultAsync<TValue, TNewError> {
+    return new ResultAsync(this.value.then((r) => r.mapError(selector)));
+  }
+
   bind<TNewValue>(
     selector: SelectorTK<TValue, Result<TNewValue, TError>>
   ): ResultAsync<TNewValue, TError> {
-    return ResultAsync.from(this.value.then((r) => r.bind(selector)));
+    return new ResultAsync(this.value.then((r) => r.bind(selector)));
+  }
+
+  tap(action: ActionOfT<TValue>): ResultAsync<TValue, TError> {
+    return new ResultAsync(this.value.then((r) => r.tap(action)));
+  }
+
+  tapIf(
+    conditionOrPredicate: boolean | Predicate<TValue>,
+    action: ActionOfT<TValue>
+  ): ResultAsync<TValue, TError> {
+    return new ResultAsync(
+      this.value.then((r) => r.tapIf(conditionOrPredicate, action))
+    );
+  }
+
+  match<TNewValue>(
+    matcher:
+      | ResultMatcher<TValue, TError, TNewValue>
+      | ResultMatcherNoReturn<TValue, TError>
+  ): Promise<TNewValue | never> {
+    return this.value.then((r) => r.match(matcher));
+  }
+
+  finally<TNewValue>(
+    selector: SelectorTK<Result<TValue, TError>, TNewValue>
+  ): Promise<TNewValue> {
+    return this.value.then((r) => r.finally(selector));
+  }
+
+  onFailure(action: ActionOfT<TError>): ResultAsync<TValue, TError> {
+    return new ResultAsync(this.value.then((r) => r.onFailure(action)));
   }
 
   toPromise(): Promise<Result<TValue, TError>> {

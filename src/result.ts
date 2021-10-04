@@ -6,6 +6,8 @@ import {
   isFunction,
   never,
   Predicate,
+  ResultMatcher,
+  ResultMatcherNoReturn,
   SelectorT,
   SelectorTK,
 } from './utilities';
@@ -42,6 +44,21 @@ export class Result<TValue = Unit, TError = string> {
         }) as Result<TValue, TError>);
   }
 
+  static successIf<TValue = Unit, TError = string>(
+    conditionOrPredicate: boolean | SelectorT<boolean>,
+    state: { value: TValue; error: TError }
+  ): Result<TValue, TError> {
+    const condition = isFunction(conditionOrPredicate)
+      ? conditionOrPredicate()
+      : conditionOrPredicate;
+
+    if (condition) {
+      return Result.success(state.value);
+    } else {
+      return Result.failure(state.error);
+    }
+  }
+
   /**
    * Creates a new failed Result
    * @param error the error of the failed operation
@@ -51,6 +68,55 @@ export class Result<TValue = Unit, TError = string> {
     error: TError
   ): Result<TValue, TError> {
     return new Result({ error, isSuccess: false });
+  }
+
+  static failureIf<TValue = Unit, TError = string>(
+    conditionOrPredicate: boolean | SelectorT<boolean>,
+    value: TValue,
+    error: TError
+  ): Result<Unit, TError> {
+    return isFunction(conditionOrPredicate) && conditionOrPredicate()
+      ? Result.failure(error)
+      : Result.success(value);
+  }
+
+  static choose<TValue, TError>(maybes: Result<TValue, TError>[]): TValue[];
+  static choose<TValue, TNewValue, TError>(
+    maybes: Result<TValue, TError>[],
+    selector: SelectorTK<TValue, TNewValue>
+  ): TNewValue[];
+  static choose<TValue, TNewValue, TError>(
+    results: Result<TValue, TError>[],
+    selector?: SelectorTK<TValue, TNewValue>
+  ): TValue[] | TNewValue[] {
+    if (typeof selector === 'function') {
+      const values: TNewValue[] = [];
+
+      for (const r of results) {
+        if (r.isFailure) {
+          continue;
+        }
+
+        const original = r.getValueOrThrow();
+
+        values.push(selector(original));
+      }
+
+      return values;
+    } else {
+      const values: TValue[] = [];
+      for (const r of results) {
+        if (r.isFailure) {
+          continue;
+        }
+
+        const original = r.getValueOrThrow();
+
+        values.push(original);
+      }
+
+      return values;
+    }
   }
 
   /**
@@ -101,23 +167,6 @@ export class Result<TValue = Unit, TError = string> {
 
   /**
    * Gets the Result's inner value
-   * @param defaultOrValueCreator A value or value creator function
-   * @returns {TValue} The Result's value or a default value if the Result failed
-   */
-  getValueOrDefault(defaultOrValueCreator: TValue | SelectorT<TValue>): TValue {
-    if (isDefined(this.state.value)) {
-      return this.state.value;
-    }
-
-    if (isFunction(defaultOrValueCreator)) {
-      return defaultOrValueCreator();
-    }
-
-    return defaultOrValueCreator;
-  }
-
-  /**
-   * Gets the Result's inner value
    * @returns {TValue} the inner value if the result suceeded
    * @throws {Error} if the result failed
    */
@@ -130,20 +179,20 @@ export class Result<TValue = Unit, TError = string> {
   }
 
   /**
-   * Gets the Result's inner error
-   * @param defaultOrErrorCreator An error or error creator function
-   * @returns {TError} The Result's error or a default error if the Result succeeded
+   * Gets the Result's inner value
+   * @param defaultOrValueCreator A value or value creator function
+   * @returns {TValue} The Result's value or a default value if the Result failed
    */
-  getErrorOrDefault(defaultOrErrorCreator: TError | SelectorT<TError>): TError {
-    if (isDefined(this.state.error)) {
-      return this.state.error;
+  getValueOrDefault(defaultOrValueCreator: TValue | SelectorT<TValue>): TValue {
+    if (this.isSuccess) {
+      return this.getValueOrThrow();
     }
 
-    if (isFunction(defaultOrErrorCreator)) {
-      return defaultOrErrorCreator();
+    if (isFunction(defaultOrValueCreator)) {
+      return defaultOrValueCreator();
     }
 
-    return defaultOrErrorCreator;
+    return defaultOrValueCreator;
   }
 
   /**
@@ -159,17 +208,43 @@ export class Result<TValue = Unit, TError = string> {
     throw Error('No error');
   }
 
+  /**
+   * Gets the Result's inner error
+   * @param defaultOrErrorCreator An error or error creator function
+   * @returns {TError} The Result's error or a default error if the Result succeeded
+   */
+  getErrorOrDefault(defaultOrErrorCreator: TError | SelectorT<TError>): TError {
+    if (this.isFailure) {
+      return this.getErrorOrThrow();
+    }
+
+    if (isFunction(defaultOrErrorCreator)) {
+      return defaultOrErrorCreator();
+    }
+
+    return defaultOrErrorCreator;
+  }
+
+  /**
+   * Checks the value of a given predicate against the Result's inner value,
+   * if the Result already succeeded
+   * @param predicate check against the Result's inner value
+   * @param errorOrErrorCreator either an error value or a function to create an error from the Result's inner value
+   * @returns {Result} succeeded if the predicate is true, failed if not
+   */
   ensure(
     predicate: Predicate<TValue>,
     errorOrErrorCreator: TError | SelectorTK<TValue, TError>
   ): Result<TValue, TError> {
-    if (isDefined(this.state.error)) {
+    if (this.isFailure) {
       return this;
     }
 
-    if (isDefined(this.state.value) && !predicate(this.state.value)) {
+    const value = this.getValueOrThrow();
+
+    if (!predicate(value)) {
       return isFunction(errorOrErrorCreator)
-        ? Result.failure(errorOrErrorCreator(this.state.value))
+        ? Result.failure(errorOrErrorCreator(value))
         : Result.failure(errorOrErrorCreator);
     }
 
@@ -179,38 +254,46 @@ export class Result<TValue = Unit, TError = string> {
   map<TNewValue>(
     selector: SelectorTK<TValue, TNewValue>
   ): Result<TNewValue, TError> {
-    return isDefined(this.state.value)
-      ? Result.success(selector(this.state.value))
-      : Result.failure(this.state.error!);
+    return this.isSuccess
+      ? Result.success(selector(this.getValueOrThrow()))
+      : Result.failure(this.getErrorOrThrow());
   }
 
   mapError<TNewError>(
     selector: SelectorTK<TError, TNewError>
   ): Result<TValue, TNewError> {
-    return isDefined(this.state.error)
+    return this.isFailure
       ? Result.failure(selector(this.getErrorOrThrow()))
-      : Result.success(this.state.value!);
+      : Result.success(this.getValueOrThrow());
+  }
+
+  mapAsync<TNewValue>(
+    selector: SelectorTK<TValue, Promise<TNewValue>>
+  ): ResultAsync<TNewValue, TError> {
+    return this.isSuccess
+      ? ResultAsync.from(selector(this.getValueOrThrow()))
+      : ResultAsync.failure(this.getErrorOrThrow());
   }
 
   bind<TNewValue>(
     selector: SelectorTK<TValue, Result<TNewValue, TError>>
   ): Result<TNewValue, TError> {
-    return isDefined(this.state.value)
-      ? selector(this.state.value)
-      : Result.failure(this.state.error!);
+    return this.isSuccess
+      ? selector(this.getValueOrThrow())
+      : Result.failure(this.getErrorOrThrow());
   }
 
   bindAsync<TNewValue>(
     selector: SelectorTK<TValue, ResultAsync<TNewValue, TError>>
   ): ResultAsync<TNewValue, TError> {
-    return isDefined(this.state.value)
-      ? selector(this.state.value)
+    return this.isSuccess
+      ? selector(this.getValueOrThrow())
       : ResultAsync.failure(this.getErrorOrThrow());
   }
 
   tap(action: ActionOfT<TValue>): Result<TValue, TError> {
-    if (isDefined(this.state.value)) {
-      action(this.state.value);
+    if (this.isSuccess) {
+      action(this.getValueOrThrow());
     }
 
     return this;
@@ -220,14 +303,16 @@ export class Result<TValue = Unit, TError = string> {
     conditionOrPredicate: boolean | Predicate<TValue>,
     action: ActionOfT<TValue>
   ): Result<TValue, TError> {
-    if (!isDefined(this.state.value)) {
+    if (this.isFailure) {
       return this;
     }
 
+    const value = this.getValueOrThrow();
+
     if (isFunction(conditionOrPredicate)) {
-      conditionOrPredicate(this.state.value) && action(this.state.value);
+      conditionOrPredicate(value) && action(value);
     } else {
-      conditionOrPredicate && action(this.state.value);
+      conditionOrPredicate && action(value);
     }
 
     return this;
@@ -238,11 +323,11 @@ export class Result<TValue = Unit, TError = string> {
       | ResultMatcher<TValue, TError, TNewValue>
       | ResultMatcherNoReturn<TValue, TError>
   ): TNewValue | never {
-    if (isDefined(this.state.value)) {
-      return matcher.success(this.state.value);
+    if (this.isSuccess) {
+      return matcher.success(this.getValueOrThrow());
     }
-    if (isDefined(this.state.error)) {
-      return matcher.error(this.state.error);
+    if (this.isFailure) {
+      return matcher.error(this.getErrorOrThrow());
     }
 
     return never();
@@ -255,25 +340,23 @@ export class Result<TValue = Unit, TError = string> {
   }
 
   onFailure(action: ActionOfT<TError>): Result<TValue, TError> {
-    if (isDefined(this.state.error)) {
-      action(this.state.error);
+    if (this.isFailure) {
+      action(this.getErrorOrThrow());
     }
 
     return this;
+  }
+
+  convertFailure<TNewValue>(): Result<TNewValue, TError> {
+    if (this.isSuccess) {
+      throw new Error('Cannot convert a failure for a successful Result');
+    }
+
+    return Result.failure(this.getErrorOrThrow());
   }
 }
 
 type ResultState<TValue, TError> = {
   value?: TValue;
   error?: TError;
-};
-
-type ResultMatcher<TValue, TError, TNewValue> = {
-  success: SelectorTK<TValue, TNewValue>;
-  error: SelectorTK<TError, TNewValue>;
-};
-
-type ResultMatcherNoReturn<T, E> = {
-  success: ActionOfT<T>;
-  error: ActionOfT<E>;
 };

@@ -17,3 +17,22 @@ export function isFunction(value: unknown): value is Function {
 export function isPromise<TValue>(value: unknown): value is Promise<TValue> {
   return value instanceof Promise;
 }
+
+export type MaybeMatcher<TValue, TNewValue> = {
+  some: SelectorTK<TValue, TNewValue>;
+  none: SelectorT<TNewValue>;
+};
+export type MaybeMatcherNoReturn<TValue> = {
+  some: ActionOfT<TValue>;
+  none: Action;
+};
+
+export type ResultMatcher<TValue, TError, TNewValue> = {
+  success: SelectorTK<TValue, TNewValue>;
+  error: SelectorTK<TError, TNewValue>;
+};
+
+export type ResultMatcherNoReturn<T, E> = {
+  success: ActionOfT<T>;
+  error: ActionOfT<E>;
+};

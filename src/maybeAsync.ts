@@ -1,6 +1,13 @@
-import { Matcher, MatcherNoReturn, Maybe } from './maybe';
+import { Maybe } from './maybe';
 import { ResultAsync } from './resultAsync';
-import { ActionOfT, isPromise, SelectorT, SelectorTK } from './utilities';
+import {
+  ActionOfT,
+  isPromise,
+  MaybeMatcher,
+  MaybeMatcherNoReturn,
+  SelectorT,
+  SelectorTK,
+} from './utilities';
 
 export class MaybeAsync<TValue> {
   static from<TValue>(
@@ -27,6 +34,14 @@ export class MaybeAsync<TValue> {
     return new MaybeAsync(Promise.resolve(Maybe.none()));
   }
 
+  get hasValue(): Promise<boolean> {
+    return this.value.then((m) => m.hasValue);
+  }
+
+  get hasNoValue(): Promise<boolean> {
+    return this.value.then((m) => m.hasNoValue);
+  }
+
   private value: Promise<Maybe<TValue>>;
 
   protected constructor(value: Promise<Maybe<TValue>>) {
@@ -46,13 +61,13 @@ export class MaybeAsync<TValue> {
   }
 
   match<TNewValue>(
-    matcher: Matcher<TValue, TNewValue> | MatcherNoReturn<TValue>
+    matcher: MaybeMatcher<TValue, TNewValue> | MaybeMatcherNoReturn<TValue>
   ): Promise<TNewValue> | Promise<never> {
     return this.value.then((m) => m.match(matcher));
   }
 
-  async execute(func: ActionOfT<TValue>): Promise<void> {
-    await this.value.then((m) => m.execute(func));
+  execute(func: ActionOfT<TValue>): Promise<void> {
+    return this.value.then((m) => m.execute(func));
   }
 
   or(
@@ -65,7 +80,7 @@ export class MaybeAsync<TValue> {
     return ResultAsync.from(this.value.then((m) => m.toResult(error)));
   }
 
-  async toPromise(): Promise<Maybe<TValue>> {
+  toPromise(): Promise<Maybe<TValue>> {
     return this.value;
   }
 }

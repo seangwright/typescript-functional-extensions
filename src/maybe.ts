@@ -1,9 +1,10 @@
 import { Result } from './result';
 import {
-  Action,
   ActionOfT,
   isDefined,
   isFunction,
+  MaybeMatcher,
+  MaybeMatcherNoReturn,
   Predicate,
   SelectorT,
   SelectorTK,
@@ -130,36 +131,38 @@ export class Maybe<TValue> {
   }
 
   map<TNewValue>(selector: SelectorTK<TValue, TNewValue>): Maybe<TNewValue> {
-    return isDefined(this.value)
-      ? Maybe.from(selector(this.value))
+    return this.hasValue
+      ? Maybe.from(selector(this.getValueOrThrow()))
       : Maybe.none<TNewValue>();
   }
 
   bind<TNewValue>(
     selector: SelectorTK<TValue, Maybe<TNewValue>>
   ): Maybe<TNewValue> {
-    return isDefined(this.value)
-      ? selector(this.value)
+    return this.hasValue
+      ? selector(this.getValueOrThrow())
       : Maybe.none<TNewValue>();
   }
 
   match<TNewValue>(
-    matcher: Matcher<TValue, TNewValue> | MatcherNoReturn<TValue>
+    matcher: MaybeMatcher<TValue, TNewValue> | MaybeMatcherNoReturn<TValue>
   ): TNewValue | never {
-    return isDefined(this.value) ? matcher.some(this.value) : matcher.none();
+    return this.hasValue
+      ? matcher.some(this.getValueOrThrow())
+      : matcher.none();
   }
 
   execute(func: ActionOfT<TValue>): void {
-    if (isDefined(this.value)) {
-      func(this.value);
+    if (this.hasValue) {
+      func(this.getValueOrThrow());
     }
   }
 
   or(
     fallback: SelectorT<TValue> | Maybe<TValue> | SelectorT<Maybe<TValue>>
   ): Maybe<TValue> {
-    if (isDefined(this.value)) {
-      return Maybe.from(this.value);
+    if (this.hasValue) {
+      return Maybe.from(this.getValueOrThrow());
     }
 
     if (typeof fallback === 'function') {
@@ -174,27 +177,20 @@ export class Maybe<TValue> {
   }
 
   toResult<TError>(error: TError): Result<TValue, TError> {
-    return isDefined(this.value)
-      ? Result.success(this.value)
+    return this.hasValue
+      ? Result.success(this.getValueOrThrow())
       : Result.failure(error);
   }
 
   toString(): string {
-    return isDefined(this.value) ? `${this.value}` : 'No value';
+    return this.hasValue ? `${this.getValueOrThrow()}` : 'No value';
   }
 
   equals(maybe: Maybe<TValue>): boolean {
     return (
-      this.hasValue && maybe.hasValue && this.value == maybe.getValueOrThrow()
+      this.hasValue &&
+      maybe.hasValue &&
+      this.getValueOrThrow() == maybe.getValueOrThrow()
     );
   }
 }
-
-export type Matcher<TValue, TNewValue> = {
-  some: SelectorTK<TValue, TNewValue>;
-  none: SelectorT<TNewValue>;
-};
-export type MatcherNoReturn<TValue> = {
-  some: ActionOfT<TValue>;
-  none: Action;
-};
