@@ -72,12 +72,11 @@ export class Result<TValue = Unit, TError = string> {
 
   static failureIf<TValue = Unit, TError = string>(
     conditionOrPredicate: boolean | SelectorT<boolean>,
-    value: TValue,
-    error: TError
+    state: { value: TValue; error: TError }
   ): Result<Unit, TError> {
     return isFunction(conditionOrPredicate) && conditionOrPredicate()
-      ? Result.failure(error)
-      : Result.success(value);
+      ? Result.failure(state.error)
+      : Result.success(state.value);
   }
 
   static choose<TValue, TError>(maybes: Result<TValue, TError>[]): TValue[];
