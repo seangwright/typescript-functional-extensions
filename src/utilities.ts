@@ -1,15 +1,17 @@
 export type SelectorTK<T, K> = (v: T) => K;
-export type SelectorT<T> = () => T;
+export type SelectorT<T> = () => Exclude<T, void>;
 export type Predicate<T> = (v: T) => boolean;
-export type ActionOfT<T> = (v: T) => never;
-export type Action = () => never;
+export type ActionOfT<T> = (v: T) => void;
+export type Action = () => void;
+export type ActionOfTNever<T> = (v: T) => never;
+export type ActionNever = () => never;
 
-export const never: Action = () => {
+export const never: ActionNever = () => {
   throw Error('This error should be unreachable');
 };
 
 export function isDefined<T>(value: T | undefined): value is T {
-  return value !== undefined;
+  return value !== undefined && value !== null;
 }
 export function isFunction(value: unknown): value is Function {
   return typeof value === 'function';
@@ -23,8 +25,8 @@ export type MaybeMatcher<TValue, TNewValue> = {
   none: SelectorT<TNewValue>;
 };
 export type MaybeMatcherNoReturn<TValue> = {
-  some: ActionOfT<TValue>;
-  none: Action;
+  some: ActionOfTNever<TValue>;
+  none: ActionNever;
 };
 
 export type ResultMatcher<TValue, TError, TNewValue> = {
@@ -32,7 +34,7 @@ export type ResultMatcher<TValue, TError, TNewValue> = {
   error: SelectorTK<TError, TNewValue>;
 };
 
-export type ResultMatcherNoReturn<T, E> = {
-  success: ActionOfT<T>;
-  error: ActionOfT<E>;
+export type ResultMatcherNoReturn<TValue, TError> = {
+  success: ActionOfTNever<TValue>;
+  error: ActionOfTNever<TError>;
 };

@@ -1,6 +1,7 @@
 import { ResultAsync } from './resultAsync';
 import { Unit } from './unit';
 import {
+  Action,
   ActionOfT,
   isDefined,
   isFunction,
@@ -115,6 +116,27 @@ export class Result<TValue = Unit, TError = string> {
       }
 
       return values;
+    }
+  }
+
+  static try<TValue, TError = string>(
+    actionOrSelector: SelectorT<TValue>,
+    errorHandler: SelectorTK<unknown, TError>
+  ): Result<TValue, TError>;
+  static try<TError = string>(
+    actionOrSelector: Action,
+    errorHandler: SelectorTK<unknown, TError>
+  ): Result<Unit, TError>;
+  static try<TValue = Unit, TError = string>(
+    actionOrSelector: SelectorT<TValue> | Action,
+    errorHandler: SelectorTK<unknown, TError>
+  ): Result<TValue, TError> {
+    try {
+      const value = actionOrSelector();
+
+      return Result.success(value!);
+    } catch (error: unknown) {
+      return Result.failure(errorHandler(error));
     }
   }
 
@@ -250,6 +272,27 @@ export class Result<TValue = Unit, TError = string> {
     return this;
   }
 
+  check<TOtherValue>(
+    selector: SelectorTK<TValue, Result<TOtherValue, TError>>
+  ): Result<TValue, TError> {
+    return this.bind(selector).map((_) => this.getValueOrThrow()!);
+  }
+
+  checkIf<TOtherValue>(
+    conditionOrPredicate: boolean | Predicate<TValue>,
+    selector: SelectorTK<TValue, Result<TOtherValue, TError>>
+  ): Result<TValue, TError> {
+    if (this.isFailure) {
+      return this;
+    }
+
+    const condition = isFunction(conditionOrPredicate)
+      ? conditionOrPredicate(this.getValueOrThrow())
+      : conditionOrPredicate;
+
+    return condition ? this.check(selector) : this;
+  }
+
   map<TNewValue>(
     selector: SelectorTK<TValue, TNewValue>
   ): Result<TNewValue, TError> {
@@ -353,6 +396,8 @@ export class Result<TValue = Unit, TError = string> {
 
     return Result.failure(this.getErrorOrThrow());
   }
+
+  onSuccessTry() {}
 }
 
 type ResultState<TValue, TError> = {
