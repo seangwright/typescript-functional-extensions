@@ -397,7 +397,68 @@ export class Result<TValue = Unit, TError = string> {
     return Result.failure(this.getErrorOrThrow());
   }
 
-  onSuccessTry() {}
+  onSuccessTry(
+    action: Action | ActionOfT<TValue>,
+    errorHandler: SelectorTK<unknown, TError>
+  ): Result<TValue, TError> {
+    if (this.isFailure) {
+      return this;
+    }
+
+    const value = this.getValueOrThrow();
+
+    try {
+      action(value);
+
+      return Result.success(value);
+    } catch (error: unknown) {
+      return Result.failure(errorHandler(error));
+    }
+  }
+
+  onSuccessTryAsync(
+    action: SelectorTK<TValue, Promise<void>>,
+    errorHander: SelectorTK<unknown, TError>
+  ): ResultAsync<TValue, TError> {
+    if (this.isFailure) {
+      return ResultAsync.failure(this.getErrorOrThrow());
+    }
+
+    const value = this.getValueOrThrow();
+
+    const result = async () => {
+      try {
+        await action(value);
+
+        return Result.success<TValue, TError>(value);
+      } catch (error: unknown) {
+        return Result.failure<TValue, TError>(errorHander(error));
+      }
+    };
+
+    return ResultAsync.from<TValue, TError>(result());
+  }
+
+  onSuccessTryMap<TNewValue>(
+    selector: SelectorT<TNewValue>,
+    errorHandler: SelectorTK<unknown, TError>
+  ): Result<TNewValue, TError>;
+  onSuccessTryMap<TNewValue>(
+    selector: SelectorT<TNewValue> | SelectorTK<TValue, TNewValue>,
+    errorHandler: SelectorTK<unknown, TError>
+  ): Result<TNewValue, TError> {
+    if (this.isFailure) {
+      return Result.failure(this.getErrorOrThrow());
+    }
+
+    try {
+      const value = selector(this.getValueOrThrow());
+
+      return Result.success(value);
+    } catch (error: unknown) {
+      return Result.failure(errorHandler(error));
+    }
+  }
 }
 
 type ResultState<TValue, TError> = {

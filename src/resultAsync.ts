@@ -1,6 +1,7 @@
 import { Result } from './result';
 import { Unit } from './unit';
 import {
+  Action,
   ActionOfT,
   isDefined,
   isPromise,
@@ -14,7 +15,8 @@ import {
 export class ResultAsync<TValue = Unit, TError = string> {
   static from<TValue, TError>(
     promiseOrResult:
-      | Promise<TValue | Result<TValue, TError>>
+      | Promise<TValue>
+      | Promise<Result<TValue, TError>>
       | Result<TValue, TError>
   ): ResultAsync<TValue, TError> {
     if (isPromise(promiseOrResult)) {
@@ -139,6 +141,30 @@ export class ResultAsync<TValue = Unit, TError = string> {
 
   onFailure(action: ActionOfT<TError>): ResultAsync<TValue, TError> {
     return new ResultAsync(this.value.then((r) => r.onFailure(action)));
+  }
+
+  convertFailure<TNewValue>(): ResultAsync<TNewValue, TError> {
+    return new ResultAsync(this.value.then((r) => r.convertFailure()));
+  }
+
+  onSuccessTry(
+    action: Action | ActionOfT<TValue>,
+    errorHandler: SelectorTK<unknown, TError>
+  ): ResultAsync<TValue, TError> {
+    return new ResultAsync(
+      this.value.then((r) => r.onSuccessTry(action, errorHandler))
+    );
+  }
+
+  onSuccessTryAsync(
+    action: SelectorTK<TValue, Promise<void>>,
+    errorHandler: SelectorTK<unknown, TError>
+  ): ResultAsync<TValue, TError> {
+    return new ResultAsync(
+      this.value.then((r) =>
+        r.onSuccessTryAsync(action, errorHandler).toPromise()
+      )
+    );
   }
 
   toPromise(): Promise<Result<TValue, TError>> {
