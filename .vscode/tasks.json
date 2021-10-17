@@ -1,29 +1,44 @@
 {
-	"version": "2.0.0",
-	"tasks": [
-		{
-			"type": "npm",
-			"script": "install",
-			"group": "build",
-			"problemMatcher": [],
-			"label": "install",
-			"detail": "install"
-		},
-		{
-			"type": "npm",
-			"script": "test",
-			"group": "test",
-			"problemMatcher": [],
-			"label": "test",
-			"detail": "jest"
-		},
-		{
-			"type": "npm",
-			"script": "test:watch",
-			"group": "test",
-			"problemMatcher": [],
-			"label": "test - watch",
-			"detail": "jest"
-		},
-	]
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "type": "npm",
+      "script": "install",
+      "group": "build",
+      "problemMatcher": [],
+      "label": "install",
+      "detail": "install"
+    },
+    {
+      "type": "npm",
+      "script": "test",
+      "group": "test",
+      "problemMatcher": [],
+      "label": "test",
+      "detail": "jest"
+    },
+    {
+      "type": "npm",
+      "script": "test:watch",
+      "group": "test",
+      "problemMatcher": [],
+      "label": "test - watch",
+      "detail": "jest"
+    },
+    {
+      "type": "npm",
+      "script": "build",
+      "group": "build",
+      "problemMatcher": [],
+      "label": "npm: build",
+      "detail": "tsc"
+    },
+    {
+      "type": "npm",
+      "script": "start",
+      "problemMatcher": [],
+      "label": "npm: start",
+      "detail": "tsc --watch"
+    }
+  ]
 }

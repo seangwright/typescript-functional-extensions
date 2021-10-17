@@ -1,19 +1,24 @@
 {
-    "compilerOptions": {
-        "baseUrl": "./",
-        "module": "es2015",
-        "moduleResolution": "node",
-        "emitDecoratorMetadata": true,
-        "experimentalDecorators": true,
-        "esModuleInterop": true,
-        "target": "ES2020",
-        "strict": true,
-        "paths": {
-            "@/src/*": ["./src/*"]
-        },
-        "lib": [
-            "es2020",
-            "dom"
-        ],
-    }
+  "compilerOptions": {
+    "baseUrl": "./",
+    "module": "ES2015",
+    "moduleResolution": "node",
+    "declaration": true,
+    "outDir": "./dist",
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "esModuleInterop": true,
+    "target": "ES2015",
+    "strict": true,
+    "noImplicitAny": true,
+    "noImplicitReturns": true,
+    "noImplicitThis": true,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+    "paths": {
+      "@/src/*": ["./src/*"]
+    },
+    "lib": ["es2020", "dom"]
+  },
+  "include": ["src/**/*"]
 }
