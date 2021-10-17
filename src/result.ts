@@ -80,11 +80,29 @@ export class Result<TValue = Unit, TError = string> {
       : Result.success(state.value);
   }
 
-  static choose<TValue, TError>(maybes: Result<TValue, TError>[]): TValue[];
+  /**
+   * Returns only the values of successful Results
+   * @param results
+   */
+  static choose<TValue, TError>(results: Result<TValue, TError>[]): TValue[];
+  /**
+   * Returns only the values of successful Results, mapped to new values
+   * with the given selector function
+   * @param results
+   * @param selector
+   */
   static choose<TValue, TNewValue, TError>(
-    maybes: Result<TValue, TError>[],
+    results: Result<TValue, TError>[],
     selector: SelectorTK<TValue, TNewValue>
   ): TNewValue[];
+  /**
+   * Returns only the values of successful Results. If a selector function
+   * is provided, it will be used to map the values to new ones before they
+   * are returned
+   * @param results
+   * @param selector
+   * @returns
+   */
   static choose<TValue, TNewValue, TError>(
     results: Result<TValue, TError>[],
     selector?: SelectorTK<TValue, TNewValue>
@@ -119,14 +137,36 @@ export class Result<TValue = Unit, TError = string> {
     }
   }
 
+  /**
+   * Creates a new successful Result with the return value
+   * of the give function. If the function throws, a failed Result will
+   * be returned with an error created by the provided errorHandler
+   * @param actionOrSelector
+   * @param errorHandler
+   */
   static try<TValue, TError = string>(
     actionOrSelector: SelectorT<TValue>,
     errorHandler: SelectorTK<unknown, TError>
   ): Result<TValue, TError>;
+  /**
+   * Creates a new successful Result with a Unit value.
+   * If the function throws, a failed Result will
+   * be returned with an error created by the provided errorHandler
+   * @param actionOrSelector
+   * @param errorHandler
+   */
   static try<TError = string>(
     actionOrSelector: Action,
     errorHandler: SelectorTK<unknown, TError>
   ): Result<Unit, TError>;
+  /**
+   * Creates a new successful Result with the return value
+   * of the give function (or Unit if no value is returned).
+   * If the function throws, a failed Result will
+   * be returned with an error created by the provided errorHandler
+   * @param actionOrSelector
+   * @param errorHandler
+   */
   static try<TValue = Unit, TError = string>(
     actionOrSelector: SelectorT<TValue> | Action,
     errorHandler: SelectorTK<unknown, TError>

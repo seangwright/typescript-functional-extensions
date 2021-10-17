@@ -9,27 +9,62 @@ import {
   SelectorTK,
 } from './utilities';
 
+/**
+ * Represents an asynchronous value that might or might not exist
+ */
 export class MaybeAsync<TValue> {
+  /**
+   * Creates a new MaybeAsync from the given value
+   * @param value Can be a Promise or Maybe
+   * @returns MaybeAsync
+   */
   static from<TValue>(
-    promiseOrMaybe: Promise<TValue | Maybe<TValue>> | Maybe<TValue>
+    value: Promise<TValue | Maybe<TValue>> | Maybe<TValue>
   ): MaybeAsync<TValue> {
-    if (isPromise(promiseOrMaybe)) {
+    if (isPromise(value)) {
       return new MaybeAsync(
-        promiseOrMaybe
+        value.then((v) => (v instanceof Maybe ? v : Maybe.from(v)))
+      );
+    } else if (value instanceof Maybe) {
+      return new MaybeAsync(Promise.resolve(value));
+    }
+
+    throw new Error('Value must be a Promise or Maybe');
+  }
+
+  /**
+   * Similar to MaybeAsync.from but handles rejected Promises
+   * mapping them to Maybe.none
+   * @param value
+   * @returns MaybeAsync
+   */
+  static tryFrom<TValue>(
+    value: Promise<TValue | Maybe<TValue>>
+  ): MaybeAsync<TValue> {
+    if (isPromise(value)) {
+      return new MaybeAsync(
+        value
           .then((v) => (v instanceof Maybe ? v : Maybe.from(v)))
           .catch((_) => Maybe.none())
       );
-    } else if (promiseOrMaybe instanceof Maybe) {
-      return new MaybeAsync(Promise.resolve(promiseOrMaybe));
     }
 
-    throw new Error('Value must be a Promise or Maybe instance');
+    throw new Error('Value must be a Promise');
   }
 
+  /**
+   * Creates a new MaybeAsync from the given value
+   * @param value
+   * @returns
+   */
   static some<TValue>(value: TValue): MaybeAsync<TValue> {
     return new MaybeAsync(Promise.resolve(Maybe.some(value)));
   }
 
+  /**
+   * Creates a new MaybeAsync with no value
+   * @returns
+   */
   static none<TValue>(): MaybeAsync<TValue> {
     return new MaybeAsync(Promise.resolve(Maybe.none()));
   }
@@ -81,6 +116,6 @@ export class MaybeAsync<TValue> {
   }
 
   toPromise(): Promise<Maybe<TValue>> {
-    return this.value;
+    return this.value.catch((_) => Maybe.none());
   }
 }
