@@ -139,7 +139,7 @@ export class Result<TValue = Unit, TError = string> {
 
   /**
    * Creates a new successful Result with the return value
-   * of the give function. If the function throws, a failed Result will
+   * of the given function. If the function throws, a failed Result will
    * be returned with an error created by the provided errorHandler
    * @param actionOrSelector
    * @param errorHandler

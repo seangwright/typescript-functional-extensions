@@ -18,7 +18,7 @@ import {
  */
 export class ResultAsync<TValue = Unit, TError = string> {
   /**
-   * Creates a new ResultAsync from the given value
+   * Creates a new ResultAsync from the given value.
    * @param value Can be a Promise or Result
    * @returns
    */
@@ -37,6 +37,47 @@ export class ResultAsync<TValue = Unit, TError = string> {
     }
 
     throw new Error('Value must be a Promise or Result instance');
+  }
+
+  /**
+   * Creates a new successful Result with the inner value
+   * of the given Promise. If the Promise rjects, a failed Result will
+   * be returned with an error created by the provided errorHandler
+   * @param promise
+   * @param errorHandler
+   */
+  static tryAsync<TValue, TError = string>(
+    promise: Promise<TValue>,
+    errorHandler: SelectorTK<unknown, TError>
+  ): ResultAsync<TValue, TError>;
+  /**
+   * Creates a new successful Result with a Unit value.
+   * If the Promise rejects, a failed Result will
+   * be returned with an error created by the provided errorHandler
+   * @param promise
+   * @param errorHandler
+   */
+  static tryAsync<TError = string>(
+    promise: Promise<void>,
+    errorHandler: SelectorTK<unknown, TError>
+  ): ResultAsync<Unit, TError>;
+  /**
+   * Creates a new successful Result with the inner value
+   * of the given Promise (or Unit if no value).
+   * If the Promise rejects, a failed Result will
+   * be returned with an error created by the provided errorHandler
+   * @param promise
+   * @param errorHandler
+   */
+  static tryAsync<TValue = Unit, TError = string>(
+    promise: Promise<TValue> | Promise<void>,
+    errorHandler: SelectorTK<unknown, TError>
+  ): ResultAsync<TValue, TError> {
+    return new ResultAsync(
+      promise
+        .then((value) => Result.success<TValue, TError>(value!))
+        .catch((error) => Result.failure(errorHandler(error)))
+    );
   }
 
   /**
@@ -221,7 +262,18 @@ export class ResultAsync<TValue = Unit, TError = string> {
     );
   }
 
-  toPromise(): Promise<Result<TValue, TError>> {
-    return this.value.catch((error) => Result.failure(error));
+  /**
+   * Returns the inner Promise, wrapping a failed Result for a rejected Promise with the
+   * given errorHandler if provided, othewise rejected Promise handling
+   * is left to the caller.
+   * @param errorHandler
+   * @returns
+   */
+  toPromise(
+    errorHandler?: SelectorTK<unknown, TError>
+  ): Promise<Result<TValue, TError>> {
+    return isDefined(errorHandler)
+      ? this.value.catch((error) => Result.failure(errorHandler(error)))
+      : this.value;
   }
 }

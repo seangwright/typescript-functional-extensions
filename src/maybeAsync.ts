@@ -1,3 +1,4 @@
+import { isDefined } from '.';
 import { Maybe } from './maybe';
 import { ResultAsync } from './resultAsync';
 import {
@@ -30,26 +31,6 @@ export class MaybeAsync<TValue> {
     }
 
     throw new Error('Value must be a Promise or Maybe');
-  }
-
-  /**
-   * Similar to MaybeAsync.from but handles rejected Promises
-   * mapping them to Maybe.none
-   * @param value
-   * @returns MaybeAsync
-   */
-  static tryFrom<TValue>(
-    value: Promise<TValue | Maybe<TValue>>
-  ): MaybeAsync<TValue> {
-    if (isPromise(value)) {
-      return new MaybeAsync(
-        value
-          .then((v) => (v instanceof Maybe ? v : Maybe.from(v)))
-          .catch((_) => Maybe.none())
-      );
-    }
-
-    throw new Error('Value must be a Promise');
   }
 
   /**
@@ -115,7 +96,15 @@ export class MaybeAsync<TValue> {
     return ResultAsync.from(this.value.then((m) => m.toResult(error)));
   }
 
-  toPromise(): Promise<Maybe<TValue>> {
-    return this.value.catch((_) => Maybe.none());
+  /**
+   * Returns the inner Promise, wrapping Maybe.none if handleError is true
+   * for a rejected Promise, otherwise rejected Promise handling is left up to the caller.
+   * @param handleError
+   * @returns
+   */
+  toPromise(handleError: boolean = false): Promise<Maybe<TValue>> {
+    return isDefined(handleError) && handleError
+      ? this.value.catch((_) => Maybe.none())
+      : this.value;
   }
 }

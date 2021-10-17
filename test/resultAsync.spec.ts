@@ -32,6 +32,15 @@ describe('ResultAsync', () => {
     expect(result.getErrorOrThrow()).toBe('failure');
   });
 
+  test('from creates a successful result if the Promise resolves', async () => {
+    const value = { email: 'test@test.com' };
+    const sut = ResultAsync.from(Promise.resolve(value));
+
+    const result = await sut.toPromise();
+
+    expect(result).toSucceedWith(value);
+  });
+
   test('bindAsync to a failed ResultAsync will return a failed Result', async () => {
     const sut = Result.success();
 
