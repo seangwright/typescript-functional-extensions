@@ -10,4 +10,8 @@ export class Unit {
   static get Instance() {
     return this.instance ?? new Unit();
   }
+
+  toString(): string {
+    return 'Unit';
+  }
 }

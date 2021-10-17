@@ -183,7 +183,13 @@ export class Maybe<TValue> {
   }
 
   toString(): string {
-    return this.hasValue ? `${this.getValueOrThrow()}` : 'No value';
+    return this.hasValue ? `Maybe.some` : 'Maybe.none';
+  }
+
+  print(): string {
+    return this.hasValue
+      ? `{ Maybe.some: [${this.getValueOrThrow()}] }`
+      : `{ Maybe.none: [No value] }`;
   }
 
   equals(maybe: Maybe<TValue>): boolean {

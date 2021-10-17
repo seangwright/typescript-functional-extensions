@@ -16,9 +16,9 @@
     "noImplicitOverride": true,
     "noFallthroughCasesInSwitch": true,
     "paths": {
-      "@/src/*": ["./src/*"]
+      "@/src/*": ["src/*"]
     },
     "lib": ["es2020", "dom"]
   },
-  "include": ["src/**/*"]
+  "include": ["src/**/*.ts"]
 }

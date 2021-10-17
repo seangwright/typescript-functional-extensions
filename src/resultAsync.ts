@@ -168,6 +168,6 @@ export class ResultAsync<TValue = Unit, TError = string> {
   }
 
   toPromise(): Promise<Result<TValue, TError>> {
-    return this.value;
+    return this.value.catch((error) => Result.failure(error));
   }
 }

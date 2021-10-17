@@ -459,6 +459,16 @@ export class Result<TValue = Unit, TError = string> {
       return Result.failure(errorHandler(error));
     }
   }
+
+  toString(): string {
+    return this.isSuccess ? 'Result.success' : 'Result.failure';
+  }
+
+  print(): string {
+    return this.isFailure
+      ? `{ Result error: [${this.getErrorOrThrow()}] }`
+      : `{ Result value: [${this.getValueOrThrow()}] }`;
+  }
 }
 
 type ResultState<TValue, TError> = {

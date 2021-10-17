@@ -1,5 +1,5 @@
 /** @type {import('ts-jest/dist/types').InitialOptionsTsJest} */
-module.exports = {
+export default {
   preset: 'ts-jest',
   testEnvironment: 'node',
   globals: {
@@ -10,4 +10,5 @@ module.exports = {
   moduleNameMapper: {
     '^@/src/(.*)$': '<rootDir>/src/$1',
   },
+  setupFilesAfterEnv: ['./test/expectExtensions.ts'],
 };

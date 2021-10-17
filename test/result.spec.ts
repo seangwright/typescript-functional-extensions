@@ -1,39 +1,36 @@
 import { Result } from '@/src/result';
-import { ResultAsync } from '@/src/resultAsync';
+import { Unit } from '@/src/unit';
 
 describe('Result', () => {
-  test('success constructs with a successful state', () => {
+  test('success with no value constructs with a successful state', () => {
     const sut = Result.success();
 
-    expect(sut.isFailure).toBe(false);
-    expect(sut.isSuccess).toBe(true);
+    expect(sut).toSucceed();
+    expect(sut).toSucceedWith(Unit.Instance);
+    expect(sut).not.toSucceedWith('three');
+    expect(sut).not.toFail();
+    expect(sut).not.toFailWith('error');
   });
 
-  test('none constructs with no string value', () => {
-    const sut = Result.failure('error!');
+  test('success with value constructs with a successful state', () => {
+    const value = { user: { email: 'test@test.com' } };
+    const sut = Result.success(value);
 
-    expect(sut.isFailure).toBe(true);
-    expect(sut.getErrorOrThrow()).toBe('error!');
+    expect(sut).toSucceed();
+    expect(sut).toSucceedWith(value);
+    expect(sut).not.toSucceedWith(Unit.Instance);
+    expect(sut).not.toFail();
+    expect(sut).not.toFailWith('error');
   });
 
-  test('bind maps one result to another', () => {
-    const resultNumber = Result.success(2);
-    const sut = Result.success();
+  test('failure constructs with a failed state', () => {
+    const error = 'error';
+    const sut = Result.failure(error);
 
-    const newResult = sut.bind(() => resultNumber);
-
-    expect(newResult.isSuccess).toBe(true);
-    expect(newResult.getValueOrThrow()).toBe(2);
-  });
-
-  test('bindAsync maps one result to an async result', async () => {
-    const sut = Result.success();
-
-    const resultAsync = ResultAsync.from(Promise.resolve(Result.success(2)));
-
-    const newResult = await sut.bindAsync(() => resultAsync).toPromise();
-
-    expect(newResult.isSuccess).toBe(true);
-    expect(newResult.getValueOrThrow()).toBe(2);
+    expect(sut).toFail();
+    expect(sut).toFailWith(error);
+    expect(sut).not.toFailWith('');
+    expect(sut).not.toSucceed();
+    expect(sut).not.toSucceedWith(Unit.Instance);
   });
 });
