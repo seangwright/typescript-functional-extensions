@@ -10,7 +10,7 @@ export const never: ActionNever = () => {
   throw Error('This error should be unreachable');
 };
 
-export function isDefined<T>(value: T | undefined): value is T {
+export function isDefined<T>(value: T | undefined): value is Exclude<T, null> {
   return value !== undefined && value !== null;
 }
 export function isFunction(value: unknown): value is Function {
@@ -25,16 +25,16 @@ export type MaybeMatcher<TValue, TNewValue> = {
   none: SelectorT<TNewValue>;
 };
 export type MaybeMatcherNoReturn<TValue> = {
-  some: ActionOfTNever<TValue>;
-  none: ActionNever;
+  some: ActionOfT<TValue>;
+  none: Action;
 };
 
 export type ResultMatcher<TValue, TError, TNewValue> = {
   success: SelectorTK<TValue, TNewValue>;
-  error: SelectorTK<TError, TNewValue>;
+  failure: SelectorTK<TError, TNewValue>;
 };
 
 export type ResultMatcherNoReturn<TValue, TError> = {
-  success: ActionOfTNever<TValue>;
-  error: ActionOfTNever<TError>;
+  success: ActionOfT<TValue>;
+  failure: ActionOfT<TError>;
 };

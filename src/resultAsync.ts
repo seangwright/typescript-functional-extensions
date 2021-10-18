@@ -224,7 +224,7 @@ export class ResultAsync<TValue = Unit, TError = string> {
     matcher:
       | ResultMatcher<TValue, TError, TNewValue>
       | ResultMatcherNoReturn<TValue, TError>
-  ): Promise<TNewValue | never> {
+  ): Promise<TNewValue | void> {
     return this.value.then((r) => r.match(matcher));
   }
 

@@ -37,7 +37,7 @@ export class Maybe<TValue> {
    * @param value The value of the new maybe.
    * @returns {Maybe}
    */
-  static from<TValue>(value: TValue | undefined): Maybe<TValue> {
+  static from<TValue>(value: TValue | undefined | null): Maybe<TValue> {
     return new Maybe(value);
   }
 
@@ -106,8 +106,8 @@ export class Maybe<TValue> {
     return !this.hasValue;
   }
 
-  protected constructor(value?: TValue) {
-    this.value = value;
+  protected constructor(value?: TValue | null) {
+    this.value = isDefined(value) ? value : undefined;
   }
 
   getValueOrDefault(createDefault: TValue | SelectorT<TValue>): TValue {
@@ -133,20 +133,18 @@ export class Maybe<TValue> {
   map<TNewValue>(selector: SelectorTK<TValue, TNewValue>): Maybe<TNewValue> {
     return this.hasValue
       ? Maybe.from(selector(this.getValueOrThrow()))
-      : Maybe.none<TNewValue>();
+      : Maybe.none();
   }
 
   bind<TNewValue>(
     selector: SelectorTK<TValue, Maybe<TNewValue>>
   ): Maybe<TNewValue> {
-    return this.hasValue
-      ? selector(this.getValueOrThrow())
-      : Maybe.none<TNewValue>();
+    return this.hasValue ? selector(this.getValueOrThrow()) : Maybe.none();
   }
 
   match<TNewValue>(
     matcher: MaybeMatcher<TValue, TNewValue> | MaybeMatcherNoReturn<TValue>
-  ): TNewValue | never {
+  ): TNewValue | void {
     return this.hasValue
       ? matcher.some(this.getValueOrThrow())
       : matcher.none();
@@ -159,21 +157,27 @@ export class Maybe<TValue> {
   }
 
   or(
-    fallback: SelectorT<TValue> | Maybe<TValue> | SelectorT<Maybe<TValue>>
+    fallback:
+      | TValue
+      | Maybe<TValue>
+      | SelectorT<TValue>
+      | SelectorT<Maybe<TValue>>
   ): Maybe<TValue> {
     if (this.hasValue) {
-      return Maybe.from(this.getValueOrThrow());
+      return new Maybe(this.getValueOrThrow());
     }
 
-    if (typeof fallback === 'function') {
+    if (isFunction(fallback)) {
       const maybeOrValue = fallback();
 
       return maybeOrValue instanceof Maybe
         ? maybeOrValue
-        : Maybe.from(maybeOrValue);
-    } else {
+        : new Maybe(maybeOrValue);
+    } else if (fallback instanceof Maybe) {
       return fallback;
     }
+
+    return new Maybe(fallback);
   }
 
   toResult<TError>(error: TError): Result<TValue, TError> {
@@ -184,12 +188,6 @@ export class Maybe<TValue> {
 
   toString(): string {
     return this.hasValue ? `Maybe.some` : 'Maybe.none';
-  }
-
-  print(): string {
-    return this.hasValue
-      ? `{ Maybe.some: [${this.getValueOrThrow()}] }`
-      : `{ Maybe.none: [No value] }`;
   }
 
   equals(maybe: Maybe<TValue>): boolean {

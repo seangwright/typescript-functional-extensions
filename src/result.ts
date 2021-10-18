@@ -404,12 +404,12 @@ export class Result<TValue = Unit, TError = string> {
     matcher:
       | ResultMatcher<TValue, TError, TNewValue>
       | ResultMatcherNoReturn<TValue, TError>
-  ): TNewValue | never {
+  ): TNewValue | void {
     if (this.isSuccess) {
       return matcher.success(this.getValueOrThrow());
     }
     if (this.isFailure) {
-      return matcher.error(this.getErrorOrThrow());
+      return matcher.failure(this.getErrorOrThrow());
     }
 
     return never();
@@ -504,7 +504,7 @@ export class Result<TValue = Unit, TError = string> {
     return this.isSuccess ? 'Result.success' : 'Result.failure';
   }
 
-  print(): string {
+  debug(): string {
     return this.isFailure
       ? `{ Result error: [${this.getErrorOrThrow()}] }`
       : `{ Result value: [${this.getValueOrThrow()}] }`;

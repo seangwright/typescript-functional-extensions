@@ -78,7 +78,7 @@ export class MaybeAsync<TValue> {
 
   match<TNewValue>(
     matcher: MaybeMatcher<TValue, TNewValue> | MaybeMatcherNoReturn<TValue>
-  ): Promise<TNewValue> | Promise<never> {
+  ): Promise<TNewValue | void> {
     return this.value.then((m) => m.match(matcher));
   }
 

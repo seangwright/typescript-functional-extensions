@@ -1,7 +1,40 @@
+import { Maybe } from '@/src/maybe';
 import { Result } from '@/src/result';
-import { isDefined } from '@/src/utilities';
+import { isDefined, isFunction, SelectorT } from '@/src/utilities';
 
 expect.extend({
+  toHaveNoValue<TValue>(received: Maybe<TValue>): MatchResponse {
+    return received.hasNoValue
+      ? r(
+          true,
+          () =>
+            `expected ${received} to have no value, but it has a value [${received.getValueOrThrow()}]`
+        )
+      : r(false, `expected ${received} to have a value, but it has none`);
+  },
+  toHaveValue<TValue>(
+    received: Maybe<TValue>,
+    expectedValue: TValue
+  ): MatchResponse {
+    if (received.hasNoValue) {
+      return r(
+        false,
+        `expected [${received}] to have a value [${expectedValue}], but it has none`
+      );
+    }
+
+    const value = received.getValueOrThrow();
+
+    return value === expectedValue
+      ? r(
+          true,
+          `expected [${received}] to have a value [${expectedValue}], but it has a value of [${value}]`
+        )
+      : r(
+          false,
+          `expected [${received}] to not have a value [${expectedValue}] but id does`
+        );
+  },
   toSucceed<TValue, TError>(received: Result<TValue, TError>): MatchResponse {
     return received.isFailure
       ? r(
@@ -92,10 +125,17 @@ expect.extend({
 
 type MatchResponse = { pass: boolean; message: () => string };
 
-function r(pass: boolean, message: string): MatchResponse {
+function r(
+  pass: boolean,
+  messageOrCreator: SelectorT<string> | string
+): MatchResponse {
+  const message = isFunction(messageOrCreator)
+    ? messageOrCreator
+    : () => messageOrCreator;
+
   return {
     pass,
-    message: () => message,
+    message,
   };
 }
 
