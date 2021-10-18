@@ -1,3 +1,4 @@
+import { Predicate } from '.';
 import { ResultAsync } from './resultAsync';
 import { Unit } from './unit';
 import {
@@ -6,7 +7,7 @@ import {
   isDefined,
   isFunction,
   never,
-  Predicate,
+  PredicateOfT,
   ResultMatcher,
   ResultMatcherNoReturn,
   SelectorT,
@@ -46,18 +47,24 @@ export class Result<TValue = Unit, TError = string> {
   }
 
   static successIf<TValue = Unit, TError = string>(
-    conditionOrPredicate: boolean | SelectorT<boolean>,
+    condition: boolean,
+    state: { value: TValue; error: TError }
+  ): Result<TValue, TError>;
+  static successIf<TValue = Unit, TError = string>(
+    predicate: Predicate,
+    state: { value: TValue; error: TError }
+  ): Result<TValue, TError>;
+  static successIf<TValue = Unit, TError = string>(
+    conditionOrPredicate: boolean | Predicate,
     state: { value: TValue; error: TError }
   ): Result<TValue, TError> {
     const condition = isFunction(conditionOrPredicate)
       ? conditionOrPredicate()
       : conditionOrPredicate;
 
-    if (condition) {
-      return Result.success(state.value);
-    } else {
-      return Result.failure(state.error);
-    }
+    return condition
+      ? Result.success(state.value)
+      : Result.failure(state.error);
   }
 
   /**
@@ -72,10 +79,22 @@ export class Result<TValue = Unit, TError = string> {
   }
 
   static failureIf<TValue = Unit, TError = string>(
-    conditionOrPredicate: boolean | SelectorT<boolean>,
+    condition: boolean,
     state: { value: TValue; error: TError }
-  ): Result<Unit, TError> {
-    return isFunction(conditionOrPredicate) && conditionOrPredicate()
+  ): Result<TValue, TError>;
+  static failureIf<TValue = Unit, TError = string>(
+    predicate: Predicate,
+    state: { value: TValue; error: TError }
+  ): Result<TValue, TError>;
+  static failureIf<TValue = Unit, TError = string>(
+    conditionOrPredicate: boolean | Predicate,
+    state: { value: TValue; error: TError }
+  ): Result<TValue, TError> {
+    const condition = isFunction(conditionOrPredicate)
+      ? conditionOrPredicate()
+      : conditionOrPredicate;
+
+    return condition
       ? Result.failure(state.error)
       : Result.success(state.value);
   }
@@ -141,22 +160,22 @@ export class Result<TValue = Unit, TError = string> {
    * Creates a new successful Result with the return value
    * of the given function. If the function throws, a failed Result will
    * be returned with an error created by the provided errorHandler
-   * @param actionOrSelector
+   * @param selector
    * @param errorHandler
    */
   static try<TValue, TError = string>(
-    actionOrSelector: SelectorT<TValue>,
+    selector: SelectorT<TValue>,
     errorHandler: SelectorTK<unknown, TError>
   ): Result<TValue, TError>;
   /**
    * Creates a new successful Result with a Unit value.
    * If the function throws, a failed Result will
    * be returned with an error created by the provided errorHandler
-   * @param actionOrSelector
+   * @param action
    * @param errorHandler
    */
   static try<TError = string>(
-    actionOrSelector: Action,
+    action: Action,
     errorHandler: SelectorTK<unknown, TError>
   ): Result<Unit, TError>;
   /**
@@ -239,6 +258,8 @@ export class Result<TValue = Unit, TError = string> {
     throw Error('No value');
   }
 
+  getValueOrDefault(defaultValue: TValue): TValue;
+  getValueOrDefault(creator: SelectorT<TValue>): TValue;
   /**
    * Gets the Result's inner value
    * @param defaultOrValueCreator A value or value creator function
@@ -286,6 +307,14 @@ export class Result<TValue = Unit, TError = string> {
     return defaultOrErrorCreator;
   }
 
+  ensure(
+    predicate: PredicateOfT<TValue>,
+    error: TError
+  ): Result<TValue, TError>;
+  ensure(
+    predicate: PredicateOfT<TValue>,
+    errorCreator: SelectorTK<TValue, TError>
+  ): Result<TValue, TError>;
   /**
    * Checks the value of a given predicate against the Result's inner value,
    * if the Result already succeeded
@@ -294,7 +323,7 @@ export class Result<TValue = Unit, TError = string> {
    * @returns {Result} succeeded if the predicate is true, failed if not
    */
   ensure(
-    predicate: Predicate<TValue>,
+    predicate: PredicateOfT<TValue>,
     errorOrErrorCreator: TError | SelectorTK<TValue, TError>
   ): Result<TValue, TError> {
     if (this.isFailure) {
@@ -303,13 +332,13 @@ export class Result<TValue = Unit, TError = string> {
 
     const value = this.getValueOrThrow();
 
-    if (!predicate(value)) {
-      return isFunction(errorOrErrorCreator)
-        ? Result.failure(errorOrErrorCreator(value))
-        : Result.failure(errorOrErrorCreator);
+    if (predicate(value)) {
+      return this;
     }
 
-    return this;
+    return isFunction(errorOrErrorCreator)
+      ? Result.failure(errorOrErrorCreator(value))
+      : Result.failure(errorOrErrorCreator);
   }
 
   check<TOtherValue>(
@@ -319,7 +348,7 @@ export class Result<TValue = Unit, TError = string> {
   }
 
   checkIf<TOtherValue>(
-    conditionOrPredicate: boolean | Predicate<TValue>,
+    conditionOrPredicate: boolean | PredicateOfT<TValue>,
     selector: SelectorTK<TValue, Result<TOtherValue, TError>>
   ): Result<TValue, TError> {
     if (this.isFailure) {
@@ -382,7 +411,7 @@ export class Result<TValue = Unit, TError = string> {
   }
 
   tapIf(
-    conditionOrPredicate: boolean | Predicate<TValue>,
+    conditionOrPredicate: boolean | PredicateOfT<TValue>,
     action: ActionOfT<TValue>
   ): Result<TValue, TError> {
     if (this.isFailure) {

@@ -1,6 +1,7 @@
 export type SelectorTK<T, K> = (v: T) => K;
 export type SelectorT<T> = () => Exclude<T, void>;
-export type Predicate<T> = (v: T) => boolean;
+export type Predicate = () => boolean;
+export type PredicateOfT<T> = (v: T) => boolean;
 export type ActionOfT<T> = (v: T) => void;
 export type Action = () => void;
 export type ActionOfTNever<T> = (v: T) => never;

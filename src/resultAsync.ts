@@ -6,7 +6,7 @@ import {
   isDefined,
   isFunction,
   isPromise,
-  Predicate,
+  PredicateOfT,
   ResultMatcher,
   ResultMatcherNoReturn,
   SelectorT,
@@ -135,10 +135,14 @@ export class ResultAsync<TValue = Unit, TError = string> {
     return this.value.then((r) => r.getValueOrThrow());
   }
 
-  getValueOrDeafult(
+  getValueOrDefault(defaultValue: TValue): Promise<TValue>;
+  getValueOrDefault(creator: SelectorT<TValue>): Promise<TValue>;
+  getValueOrDefault(
     defaultOrValueCreator: TValue | SelectorT<TValue>
   ): Promise<TValue> {
-    return this.value.then((r) => r.getValueOrDefault(defaultOrValueCreator));
+    return this.value.then((r) =>
+      r.getValueOrDefault(defaultOrValueCreator as TValue)
+    );
   }
 
   getErrorOrThrow(): Promise<TError> {
@@ -159,7 +163,7 @@ export class ResultAsync<TValue = Unit, TError = string> {
    * @returns {Result} succeeded if the predicate is true, failed if not
    */
   ensure(
-    predicate: Predicate<TValue>,
+    predicate: PredicateOfT<TValue>,
     errorOrErrorCreator: TError | SelectorTK<TValue, TError>
   ): ResultAsync<TValue, TError> {
     return new ResultAsync(
@@ -212,7 +216,7 @@ export class ResultAsync<TValue = Unit, TError = string> {
   }
 
   tapIf(
-    conditionOrPredicate: boolean | Predicate<TValue>,
+    conditionOrPredicate: boolean | PredicateOfT<TValue>,
     action: ActionOfT<TValue>
   ): ResultAsync<TValue, TError> {
     return new ResultAsync(

@@ -5,7 +5,7 @@ import {
   isFunction,
   MaybeMatcher,
   MaybeMatcherNoReturn,
-  Predicate,
+  PredicateOfT,
   SelectorT,
   SelectorTK,
 } from './utilities';
@@ -44,11 +44,11 @@ export class Maybe<TValue> {
   static tryFirst<TValue>(values: TValue[]): Maybe<TValue>;
   static tryFirst<TValue>(
     values: TValue[],
-    predicate: Predicate<TValue>
+    predicate: PredicateOfT<TValue>
   ): Maybe<TValue>;
   static tryFirst<TValue>(
     values: TValue[],
-    predicate?: Predicate<TValue>
+    predicate?: PredicateOfT<TValue>
   ): Maybe<TValue> {
     if (typeof predicate === 'function') {
       return Maybe.from(values.find(predicate));
