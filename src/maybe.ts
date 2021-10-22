@@ -195,6 +195,10 @@ export class Maybe<TValue> {
     return new Maybe(fallback);
   }
 
+  orAsync(fallback: MaybeAsync<TValue>): MaybeAsync<TValue> {
+    return this.hasValue ? MaybeAsync.some(this.getValueOrThrow()) : fallback;
+  }
+
   toResult<TError>(error: TError): Result<TValue, TError> {
     return this.hasValue
       ? Result.success(this.getValueOrThrow())

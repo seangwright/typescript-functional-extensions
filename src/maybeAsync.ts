@@ -103,9 +103,19 @@ export class MaybeAsync<TValue> {
   }
 
   or(
-    fallback: SelectorT<TValue> | Maybe<TValue> | SelectorT<Maybe<TValue>>
+    fallback:
+      | TValue
+      | SelectorT<TValue>
+      | Maybe<TValue>
+      | SelectorT<Maybe<TValue>>
   ): MaybeAsync<TValue> {
     return new MaybeAsync(this.value.then((m) => m.or(fallback)));
+  }
+
+  orAsync(fallback: MaybeAsync<TValue>): MaybeAsync<TValue> {
+    return new MaybeAsync(
+      this.value.then((m) => m.orAsync(fallback).toPromise())
+    );
   }
 
   toResult(error: string): ResultAsync {
