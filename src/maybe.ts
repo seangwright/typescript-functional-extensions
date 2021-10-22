@@ -145,6 +145,27 @@ export class Maybe<TValue> {
       : MaybeAsync.none();
   }
 
+  tap(action: ActionOfT<TValue>): Maybe<TValue> {
+    if (this.hasValue) {
+      action(this.getValueOrThrow());
+    }
+
+    return this;
+  }
+
+  tapAsync(action: SelectorTK<TValue, Promise<void>>): MaybeAsync<TValue> {
+    if (this.hasValue) {
+      return MaybeAsync.from(
+        new Promise((resolve, _) => {
+          const value = this.getValueOrThrow();
+          action(value).then(() => resolve(value));
+        })
+      );
+    }
+
+    return MaybeAsync.none();
+  }
+
   bind<TNewValue>(
     selector: SelectorTK<TValue, Maybe<TNewValue>>
   ): Maybe<TNewValue> {
