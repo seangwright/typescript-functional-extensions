@@ -3,6 +3,7 @@ import { Maybe } from './maybe';
 import { ResultAsync } from './resultAsync';
 import {
   ActionOfT,
+  isFunction,
   isPromise,
   MaybeMatcher,
   MaybeMatcherNoReturn,
@@ -108,13 +109,31 @@ export class MaybeAsync<TValue> {
       | SelectorT<TValue>
       | Maybe<TValue>
       | SelectorT<Maybe<TValue>>
+      | MaybeAsync<TValue>
+      | SelectorT<MaybeAsync<TValue>>
   ): MaybeAsync<TValue> {
-    return new MaybeAsync(this.value.then((m) => m.or(fallback)));
-  }
-
-  orAsync(fallback: MaybeAsync<TValue>): MaybeAsync<TValue> {
     return new MaybeAsync(
-      this.value.then((m) => m.orAsync(fallback).toPromise())
+      this.value.then((m) => {
+        if (fallback instanceof MaybeAsync) {
+          return m.orAsync(fallback).toPromise();
+        } else {
+          if (m.hasNoValue) {
+            return Maybe.none();
+          }
+
+          if (!isFunction(fallback)) {
+            return m.or(fallback);
+          }
+
+          const result = fallback();
+
+          if (result instanceof MaybeAsync) {
+            return m.orAsync(result).toPromise();
+          }
+
+          return m.or(result);
+        }
+      })
     );
   }
 
