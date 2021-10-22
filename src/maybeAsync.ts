@@ -67,13 +67,29 @@ export class MaybeAsync<TValue> {
   map<TNewValue>(
     selector: SelectorTK<TValue, TNewValue>
   ): MaybeAsync<TNewValue> {
-    return MaybeAsync.from(this.value.then((m) => m.map(selector)));
+    return new MaybeAsync(this.value.then((m) => m.map(selector)));
+  }
+
+  mapAsync<TNewValue>(
+    selector: SelectorTK<TValue, Promise<TNewValue>>
+  ): MaybeAsync<TNewValue> {
+    return new MaybeAsync(
+      this.value.then((m) => m.mapAsync(selector).toPromise())
+    );
   }
 
   bind<TNewValue>(
     selector: SelectorTK<TValue, Maybe<TNewValue>>
   ): MaybeAsync<TNewValue> {
-    return MaybeAsync.from(this.value.then((m) => m.bind(selector)));
+    return new MaybeAsync(this.value.then((m) => m.bind(selector)));
+  }
+
+  bindAsync<TNewValue>(
+    selector: SelectorTK<TValue, MaybeAsync<TNewValue>>
+  ): MaybeAsync<TNewValue> {
+    return new MaybeAsync(
+      this.value.then((m) => m.bindAsync(selector).toPromise())
+    );
   }
 
   match<TNewValue>(
@@ -89,7 +105,7 @@ export class MaybeAsync<TValue> {
   or(
     fallback: SelectorT<TValue> | Maybe<TValue> | SelectorT<Maybe<TValue>>
   ): MaybeAsync<TValue> {
-    return MaybeAsync.from(this.value.then((m) => m.or(fallback)));
+    return new MaybeAsync(this.value.then((m) => m.or(fallback)));
   }
 
   toResult(error: string): ResultAsync {

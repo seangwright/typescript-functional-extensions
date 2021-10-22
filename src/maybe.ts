@@ -1,3 +1,4 @@
+import { MaybeAsync } from '.';
 import { Result } from './result';
 import {
   ActionOfT,
@@ -132,14 +133,28 @@ export class Maybe<TValue> {
 
   map<TNewValue>(selector: SelectorTK<TValue, TNewValue>): Maybe<TNewValue> {
     return this.hasValue
-      ? Maybe.from(selector(this.getValueOrThrow()))
+      ? new Maybe(selector(this.getValueOrThrow()))
       : Maybe.none();
+  }
+
+  mapAsync<TNewValue>(
+    selector: SelectorTK<TValue, Promise<TNewValue>>
+  ): MaybeAsync<TNewValue> {
+    return this.hasValue
+      ? MaybeAsync.from(selector(this.getValueOrThrow()))
+      : MaybeAsync.none();
   }
 
   bind<TNewValue>(
     selector: SelectorTK<TValue, Maybe<TNewValue>>
   ): Maybe<TNewValue> {
     return this.hasValue ? selector(this.getValueOrThrow()) : Maybe.none();
+  }
+
+  bindAsync<TNewValue>(
+    selector: SelectorTK<TValue, MaybeAsync<TNewValue>>
+  ): MaybeAsync<TNewValue> {
+    return this.hasValue ? selector(this.getValueOrThrow()) : MaybeAsync.none();
   }
 
   match<TNewValue>(
