@@ -117,8 +117,8 @@ export class MaybeAsync<TValue> {
         if (fallback instanceof MaybeAsync) {
           return m.orAsync(fallback).toPromise();
         } else {
-          if (m.hasNoValue) {
-            return Maybe.none();
+          if (m.hasValue) {
+            return m;
           }
 
           if (!isFunction(fallback)) {
