@@ -3,7 +3,9 @@ export type FunctionOfT<T> = () => Exclude<T, void>;
 export type Predicate = () => boolean;
 export type PredicateOfT<T> = (v: T) => boolean;
 export type ActionOfT<T> = (v: T) => void;
+export type AsyncActionOfT<T> = (v: T) => Promise<void>;
 export type Action = () => void;
+export type AsyncAction = () => Promise<void>;
 export type ActionOfTNever<T> = (v: T) => never;
 export type ActionNever = () => never;
 

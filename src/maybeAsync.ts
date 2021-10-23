@@ -1,4 +1,4 @@
-import { isDefined } from '.';
+import { AsyncActionOfT, isDefined } from '.';
 import { Maybe } from './maybe';
 import { ResultAsync } from './resultAsync';
 import {
@@ -73,31 +73,47 @@ export class MaybeAsync<TValue> {
   }
 
   map<TNewValue>(
-    selector: FunctionOfTtoK<TValue, TNewValue>
-  ): MaybeAsync<TNewValue> {
-    return new MaybeAsync(this.value.then((m) => m.map(selector)));
-  }
-
-  mapAsync<TNewValue>(
-    selector: FunctionOfTtoK<TValue, Promise<TNewValue>>
+    mapper: FunctionOfTtoK<TValue, TNewValue>
+  ): MaybeAsync<TNewValue>;
+  map<TNewValue>(
+    mapper: FunctionOfTtoK<TValue, Promise<TNewValue>>
+  ): MaybeAsync<TNewValue>;
+  map<TNewValue>(
+    mapper:
+      | FunctionOfTtoK<TValue, TNewValue>
+      | FunctionOfTtoK<TValue, Promise<TNewValue>>
   ): MaybeAsync<TNewValue> {
     return new MaybeAsync(
-      this.value.then((m) => m.mapAsync(selector).toPromise())
+      this.value.then(async (m) => {
+        if (m.hasNoValue) {
+          return Maybe.none<TNewValue>();
+        }
+
+        const result = mapper(m.getValueOrThrow());
+
+        if (isPromise(result)) {
+          return result.then((r) => Maybe.some(r));
+        }
+
+        return Maybe.some(result);
+      })
     );
   }
 
-  tap(action: ActionOfT<TValue>): MaybeAsync<TValue> {
-    return new MaybeAsync(this.value.then((m) => m.tap(action)));
-  }
-
-  tapAsync(action: FunctionOfTtoK<TValue, Promise<void>>): MaybeAsync<TValue> {
+  tap(action: ActionOfT<TValue>): MaybeAsync<TValue>;
+  tap(action: AsyncActionOfT<TValue>): MaybeAsync<TValue>;
+  tap(action: ActionOfT<TValue> | AsyncActionOfT<TValue>): MaybeAsync<TValue> {
     return new MaybeAsync(
       this.value.then(async (m) => {
         if (m.hasNoValue) {
           return m;
         }
 
-        await action(m.getValueOrThrow());
+        const result = action(m.getValueOrThrow());
+
+        if (isPromise(result)) {
+          await result;
+        }
 
         return m;
       })
@@ -105,16 +121,30 @@ export class MaybeAsync<TValue> {
   }
 
   bind<TNewValue>(
-    selector: FunctionOfTtoK<TValue, Maybe<TNewValue>>
-  ): MaybeAsync<TNewValue> {
-    return new MaybeAsync(this.value.then((m) => m.bind(selector)));
-  }
-
-  bindAsync<TNewValue>(
-    selector: FunctionOfTtoK<TValue, MaybeAsync<TNewValue>>
+    mapper: FunctionOfTtoK<TValue, Maybe<TNewValue>>
+  ): MaybeAsync<TNewValue>;
+  bind<TNewValue>(
+    mapper: FunctionOfTtoK<TValue, MaybeAsync<TNewValue>>
+  ): MaybeAsync<TNewValue>;
+  bind<TNewValue>(
+    mapper:
+      | FunctionOfTtoK<TValue, Maybe<TNewValue>>
+      | FunctionOfTtoK<TValue, MaybeAsync<TNewValue>>
   ): MaybeAsync<TNewValue> {
     return new MaybeAsync(
-      this.value.then((m) => m.bindAsync(selector).toPromise())
+      this.value.then((m) => {
+        if (m.hasNoValue) {
+          return Maybe.none<TNewValue>();
+        }
+
+        const result = mapper(m.getValueOrThrow());
+
+        if (result instanceof Maybe) {
+          return result;
+        }
+
+        return result.toPromise();
+      })
     );
   }
 
@@ -124,8 +154,16 @@ export class MaybeAsync<TValue> {
     return this.value.then((m) => m.match(matcher));
   }
 
-  execute(func: ActionOfT<TValue>): Promise<void> {
-    return this.value.then((m) => m.execute(func));
+  execute(func: ActionOfT<TValue>): Promise<void>;
+  execute(func: AsyncActionOfT<TValue>): Promise<void>;
+  execute(func: ActionOfT<TValue> | AsyncActionOfT<TValue>): Promise<void> {
+    return this.value.then((m) => {
+      if (m.hasNoValue) {
+        return;
+      }
+
+      return func(m.getValueOrThrow());
+    });
   }
 
   or(

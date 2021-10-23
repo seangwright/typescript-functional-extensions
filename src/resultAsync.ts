@@ -1,3 +1,4 @@
+import { AsyncActionOfT } from '.';
 import { Result } from './result';
 import { Unit } from './unit';
 import {
@@ -46,7 +47,7 @@ export class ResultAsync<TValue = Unit, TError = string> {
    * @param promise
    * @param errorHandler
    */
-  static tryAsync<TValue, TError = string>(
+  static try<TValue, TError = string>(
     promise: Promise<TValue>,
     errorHandler: FunctionOfTtoK<unknown, TError>
   ): ResultAsync<TValue, TError>;
@@ -57,7 +58,7 @@ export class ResultAsync<TValue = Unit, TError = string> {
    * @param promise
    * @param errorHandler
    */
-  static tryAsync<TError = string>(
+  static try<TError = string>(
     promise: Promise<void>,
     errorHandler: FunctionOfTtoK<unknown, TError>
   ): ResultAsync<Unit, TError>;
@@ -69,7 +70,7 @@ export class ResultAsync<TValue = Unit, TError = string> {
    * @param promise
    * @param errorHandler
    */
-  static tryAsync<TValue = Unit, TError = string>(
+  static try<TValue = Unit, TError = string>(
     promise: Promise<TValue> | Promise<void>,
     errorHandler: FunctionOfTtoK<unknown, TError>
   ): ResultAsync<TValue, TError> {
@@ -136,12 +137,12 @@ export class ResultAsync<TValue = Unit, TError = string> {
   }
 
   getValueOrDefault(defaultValue: TValue): Promise<TValue>;
-  getValueOrDefault(creator: FunctionOfT<TValue>): Promise<TValue>;
+  getValueOrDefault(valueFactory: FunctionOfT<TValue>): Promise<TValue>;
   getValueOrDefault(
-    defaultOrValueCreator: TValue | FunctionOfT<TValue>
+    defaultOrValueFactory: TValue | FunctionOfT<TValue>
   ): Promise<TValue> {
     return this.value.then((r) =>
-      r.getValueOrDefault(defaultOrValueCreator as TValue)
+      r.getValueOrDefault(defaultOrValueFactory as TValue)
     );
   }
 
@@ -155,10 +156,10 @@ export class ResultAsync<TValue = Unit, TError = string> {
     defaultOrErrorCreator: TError | FunctionOfT<TError>
   ): Promise<TError> {
     return this.value.then((r) => {
-      if (isFunction(defaultOrErrorCreator)){
-        return r.getErrorOrDefault(defaultOrErrorCreator)
+      if (isFunction(defaultOrErrorCreator)) {
+        return r.getErrorOrDefault(defaultOrErrorCreator);
       }
-      
+
       return r.getErrorOrDefault(defaultOrErrorCreator);
     });
   }
@@ -194,16 +195,30 @@ export class ResultAsync<TValue = Unit, TError = string> {
   }
 
   map<TNewValue>(
-    selector: FunctionOfTtoK<TValue, TNewValue>
-  ): ResultAsync<TNewValue, TError> {
-    return new ResultAsync(this.value.then((r) => r.map(selector)));
-  }
-
-  mapAsync<TNewValue>(
-    selector: FunctionOfTtoK<TValue, Promise<TNewValue>>
+    mapper: FunctionOfTtoK<TValue, TNewValue>
+  ): ResultAsync<TNewValue, TError>;
+  map<TNewValue>(
+    mapper: FunctionOfTtoK<TValue, Promise<TNewValue>>
+  ): ResultAsync<TNewValue, TError>;
+  map<TNewValue>(
+    mapper:
+      | FunctionOfTtoK<TValue, TNewValue>
+      | FunctionOfTtoK<TValue, Promise<TNewValue>>
   ): ResultAsync<TNewValue, TError> {
     return new ResultAsync(
-      this.value.then((r) => r.mapAsync(selector).toPromise())
+      this.value.then((r) => {
+        if (r.isFailure) {
+          return Result.failure(r.getErrorOrThrow());
+        }
+
+        const result = mapper(r.getValueOrThrow());
+
+        if (isPromise(result)) {
+          return result.then((v) => Result.success(v));
+        }
+
+        return Result.success(result);
+      })
     );
   }
 
@@ -229,11 +244,11 @@ export class ResultAsync<TValue = Unit, TError = string> {
   ): ResultAsync<TValue, TError> {
     return new ResultAsync(
       this.value.then((r) => {
-        if (isFunction(conditionOrPredicate)){
+        if (isFunction(conditionOrPredicate)) {
           return r.tapIf(conditionOrPredicate, action);
         }
 
-        return r.tapIf(conditionOrPredicate, action)
+        return r.tapIf(conditionOrPredicate, action);
       })
     );
   }
@@ -247,13 +262,33 @@ export class ResultAsync<TValue = Unit, TError = string> {
   }
 
   finally<TNewValue>(
-    selector: FunctionOfTtoK<Result<TValue, TError>, TNewValue>
+    mapper: FunctionOfTtoK<Result<TValue, TError>, TNewValue>
   ): Promise<TNewValue> {
-    return this.value.then((r) => r.finally(selector));
+    return this.value.then((r) => r.finally(mapper));
   }
 
-  onFailure(action: ActionOfT<TError>): ResultAsync<TValue, TError> {
-    return new ResultAsync(this.value.then((r) => r.onFailure(action)));
+  onFailure(action: ActionOfT<TError>): ResultAsync<TValue, TError>;
+  onFailure(action: AsyncActionOfT<TError>): ResultAsync<TValue, TError>;
+  onFailure(
+    action: ActionOfT<TError> | AsyncActionOfT<TError>
+  ): ResultAsync<TValue, TError> {
+    return new ResultAsync(
+      this.value.then(async (r) => {
+        if (r.isSuccess) {
+          return r;
+        }
+
+        const error = r.getErrorOrThrow();
+
+        const result = action(error);
+
+        if (isPromise(result)) {
+          await result;
+        }
+
+        return Result.failure(error);
+      })
+    );
   }
 
   convertFailure<TNewValue>(): ResultAsync<TNewValue, TError> {
@@ -261,22 +296,41 @@ export class ResultAsync<TValue = Unit, TError = string> {
   }
 
   onSuccessTry(
-    action: Action | ActionOfT<TValue>,
+    action: Action,
     errorHandler: FunctionOfTtoK<unknown, TError>
-  ): ResultAsync<TValue, TError> {
-    return new ResultAsync(
-      this.value.then((r) => r.onSuccessTry(action, errorHandler))
-    );
-  }
-
-  onSuccessTryAsync(
+  ): ResultAsync<TValue, TError>;
+  onSuccessTry(
+    action: ActionOfT<TValue>,
+    errorHandler: FunctionOfTtoK<unknown, TError>
+  ): ResultAsync<TValue, TError>;
+  onSuccessTry(
     action: FunctionOfTtoK<TValue, Promise<void>>,
     errorHandler: FunctionOfTtoK<unknown, TError>
+  ): ResultAsync<TValue, TError>;
+  onSuccessTry(
+    action: Action | ActionOfT<TValue> | FunctionOfTtoK<TValue, Promise<void>>,
+    errorHandler: FunctionOfTtoK<unknown, TError>
   ): ResultAsync<TValue, TError> {
     return new ResultAsync(
-      this.value.then((r) =>
-        r.onSuccessTryAsync(action, errorHandler).toPromise()
-      )
+      this.value.then((r) => {
+        if (r.isFailure) {
+          return r;
+        }
+
+        const value = r.getValueOrThrow();
+
+        try {
+          const result = action(value);
+
+          if (isPromise(result)) {
+            return result.then(() => Result.success(value));
+          }
+
+          return Result.success(value);
+        } catch (error: unknown) {
+          return Result.failure(errorHandler(error));
+        }
+      })
     );
   }
 
