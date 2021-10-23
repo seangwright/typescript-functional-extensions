@@ -2,13 +2,13 @@ import { MaybeAsync } from '.';
 import { Result } from './result';
 import {
   ActionOfT,
+  FunctionOfT,
+  FunctionOfTtoK,
   isDefined,
   isFunction,
   MaybeMatcher,
   MaybeMatcherNoReturn,
   PredicateOfT,
-  SelectorT,
-  SelectorTK,
 } from './utilities';
 
 /**
@@ -61,11 +61,11 @@ export class Maybe<TValue> {
   static choose<TValue>(maybes: Maybe<TValue>[]): TValue[];
   static choose<TValue, TNewValue>(
     maybes: Maybe<TValue>[],
-    selector: SelectorTK<TValue, TNewValue>
+    selector: FunctionOfTtoK<TValue, TNewValue>
   ): TNewValue[];
   static choose<TValue, TNewValue>(
     maybes: Maybe<TValue>[],
-    selector?: SelectorTK<TValue, TNewValue>
+    selector?: FunctionOfTtoK<TValue, TNewValue>
   ): TValue[] | TNewValue[] {
     if (typeof selector === 'function') {
       const values: TNewValue[] = [];
@@ -111,7 +111,7 @@ export class Maybe<TValue> {
     this.value = isDefined(value) ? value : undefined;
   }
 
-  getValueOrDefault(createDefault: TValue | SelectorT<TValue>): TValue {
+  getValueOrDefault(createDefault: TValue | FunctionOfT<TValue>): TValue {
     if (isDefined(this.value)) {
       return this.value;
     }
@@ -131,14 +131,16 @@ export class Maybe<TValue> {
     throw Error('No value');
   }
 
-  map<TNewValue>(selector: SelectorTK<TValue, TNewValue>): Maybe<TNewValue> {
+  map<TNewValue>(
+    selector: FunctionOfTtoK<TValue, TNewValue>
+  ): Maybe<TNewValue> {
     return this.hasValue
       ? new Maybe(selector(this.getValueOrThrow()))
       : Maybe.none();
   }
 
   mapAsync<TNewValue>(
-    selector: SelectorTK<TValue, Promise<TNewValue>>
+    selector: FunctionOfTtoK<TValue, Promise<TNewValue>>
   ): MaybeAsync<TNewValue> {
     return this.hasValue
       ? MaybeAsync.from(selector(this.getValueOrThrow()))
@@ -153,7 +155,7 @@ export class Maybe<TValue> {
     return this;
   }
 
-  tapAsync(action: SelectorTK<TValue, Promise<void>>): MaybeAsync<TValue> {
+  tapAsync(action: FunctionOfTtoK<TValue, Promise<void>>): MaybeAsync<TValue> {
     if (this.hasValue) {
       return MaybeAsync.from(
         new Promise((resolve, _) => {
@@ -167,13 +169,13 @@ export class Maybe<TValue> {
   }
 
   bind<TNewValue>(
-    selector: SelectorTK<TValue, Maybe<TNewValue>>
+    selector: FunctionOfTtoK<TValue, Maybe<TNewValue>>
   ): Maybe<TNewValue> {
     return this.hasValue ? selector(this.getValueOrThrow()) : Maybe.none();
   }
 
   bindAsync<TNewValue>(
-    selector: SelectorTK<TValue, MaybeAsync<TNewValue>>
+    selector: FunctionOfTtoK<TValue, MaybeAsync<TNewValue>>
   ): MaybeAsync<TNewValue> {
     return this.hasValue ? selector(this.getValueOrThrow()) : MaybeAsync.none();
   }
@@ -196,8 +198,8 @@ export class Maybe<TValue> {
     fallback:
       | TValue
       | Maybe<TValue>
-      | SelectorT<TValue>
-      | SelectorT<Maybe<TValue>>
+      | FunctionOfT<TValue>
+      | FunctionOfT<Maybe<TValue>>
   ): Maybe<TValue> {
     if (this.hasValue) {
       return new Maybe(this.getValueOrThrow());

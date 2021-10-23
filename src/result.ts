@@ -4,14 +4,14 @@ import { Unit } from './unit';
 import {
   Action,
   ActionOfT,
+  FunctionOfT,
+  FunctionOfTtoK,
   isDefined,
   isFunction,
   never,
   PredicateOfT,
   ResultMatcher,
   ResultMatcherNoReturn,
-  SelectorT,
-  SelectorTK,
 } from './utilities';
 
 /**
@@ -112,7 +112,7 @@ export class Result<TValue = Unit, TError = string> {
    */
   static choose<TValue, TNewValue, TError>(
     results: Result<TValue, TError>[],
-    selector: SelectorTK<TValue, TNewValue>
+    selector: FunctionOfTtoK<TValue, TNewValue>
   ): TNewValue[];
   /**
    * Returns only the values of successful Results. If a selector function
@@ -124,7 +124,7 @@ export class Result<TValue = Unit, TError = string> {
    */
   static choose<TValue, TNewValue, TError>(
     results: Result<TValue, TError>[],
-    selector?: SelectorTK<TValue, TNewValue>
+    selector?: FunctionOfTtoK<TValue, TNewValue>
   ): TValue[] | TNewValue[] {
     if (typeof selector === 'function') {
       const values: TNewValue[] = [];
@@ -164,8 +164,8 @@ export class Result<TValue = Unit, TError = string> {
    * @param errorHandler
    */
   static try<TValue, TError = string>(
-    selector: SelectorT<TValue>,
-    errorHandler: SelectorTK<unknown, TError>
+    selector: FunctionOfT<TValue>,
+    errorHandler: FunctionOfTtoK<unknown, TError>
   ): Result<TValue, TError>;
   /**
    * Creates a new successful Result with a Unit value.
@@ -176,7 +176,7 @@ export class Result<TValue = Unit, TError = string> {
    */
   static try<TError = string>(
     action: Action,
-    errorHandler: SelectorTK<unknown, TError>
+    errorHandler: FunctionOfTtoK<unknown, TError>
   ): Result<Unit, TError>;
   /**
    * Creates a new successful Result with the return value
@@ -187,8 +187,8 @@ export class Result<TValue = Unit, TError = string> {
    * @param errorHandler
    */
   static try<TValue = Unit, TError = string>(
-    actionOrSelector: SelectorT<TValue> | Action,
-    errorHandler: SelectorTK<unknown, TError>
+    actionOrSelector: FunctionOfT<TValue> | Action,
+    errorHandler: FunctionOfTtoK<unknown, TError>
   ): Result<TValue, TError> {
     try {
       const value = actionOrSelector();
@@ -259,13 +259,15 @@ export class Result<TValue = Unit, TError = string> {
   }
 
   getValueOrDefault(defaultValue: TValue): TValue;
-  getValueOrDefault(creator: SelectorT<TValue>): TValue;
+  getValueOrDefault(creator: FunctionOfT<TValue>): TValue;
   /**
    * Gets the Result's inner value
    * @param defaultOrValueCreator A value or value creator function
    * @returns {TValue} The Result's value or a default value if the Result failed
    */
-  getValueOrDefault(defaultOrValueCreator: TValue | SelectorT<TValue>): TValue {
+  getValueOrDefault(
+    defaultOrValueCreator: TValue | FunctionOfT<TValue>
+  ): TValue {
     if (this.isSuccess) {
       return this.getValueOrThrow();
     }
@@ -295,7 +297,9 @@ export class Result<TValue = Unit, TError = string> {
    * @param defaultOrErrorCreator An error or error creator function
    * @returns {TError} The Result's error or a default error if the Result succeeded
    */
-  getErrorOrDefault(defaultOrErrorCreator: TError | SelectorT<TError>): TError {
+  getErrorOrDefault(
+    defaultOrErrorCreator: TError | FunctionOfT<TError>
+  ): TError {
     if (this.isFailure) {
       return this.getErrorOrThrow();
     }
@@ -313,7 +317,7 @@ export class Result<TValue = Unit, TError = string> {
   ): Result<TValue, TError>;
   ensure(
     predicate: PredicateOfT<TValue>,
-    errorCreator: SelectorTK<TValue, TError>
+    errorCreator: FunctionOfTtoK<TValue, TError>
   ): Result<TValue, TError>;
   /**
    * Checks the value of a given predicate against the Result's inner value,
@@ -324,7 +328,7 @@ export class Result<TValue = Unit, TError = string> {
    */
   ensure(
     predicate: PredicateOfT<TValue>,
-    errorOrErrorCreator: TError | SelectorTK<TValue, TError>
+    errorOrErrorCreator: TError | FunctionOfTtoK<TValue, TError>
   ): Result<TValue, TError> {
     if (this.isFailure) {
       return this;
@@ -342,14 +346,14 @@ export class Result<TValue = Unit, TError = string> {
   }
 
   check<TOtherValue>(
-    selector: SelectorTK<TValue, Result<TOtherValue, TError>>
+    selector: FunctionOfTtoK<TValue, Result<TOtherValue, TError>>
   ): Result<TValue, TError> {
     return this.bind(selector).map((_) => this.getValueOrThrow()!);
   }
 
   checkIf<TOtherValue>(
     conditionOrPredicate: boolean | PredicateOfT<TValue>,
-    selector: SelectorTK<TValue, Result<TOtherValue, TError>>
+    selector: FunctionOfTtoK<TValue, Result<TOtherValue, TError>>
   ): Result<TValue, TError> {
     if (this.isFailure) {
       return this;
@@ -363,7 +367,7 @@ export class Result<TValue = Unit, TError = string> {
   }
 
   map<TNewValue>(
-    selector: SelectorTK<TValue, TNewValue>
+    selector: FunctionOfTtoK<TValue, TNewValue>
   ): Result<TNewValue, TError> {
     return this.isSuccess
       ? Result.success(selector(this.getValueOrThrow()))
@@ -371,7 +375,7 @@ export class Result<TValue = Unit, TError = string> {
   }
 
   mapError<TNewError>(
-    selector: SelectorTK<TError, TNewError>
+    selector: FunctionOfTtoK<TError, TNewError>
   ): Result<TValue, TNewError> {
     return this.isFailure
       ? Result.failure(selector(this.getErrorOrThrow()))
@@ -379,7 +383,7 @@ export class Result<TValue = Unit, TError = string> {
   }
 
   mapAsync<TNewValue>(
-    selector: SelectorTK<TValue, Promise<TNewValue>>
+    selector: FunctionOfTtoK<TValue, Promise<TNewValue>>
   ): ResultAsync<TNewValue, TError> {
     return this.isSuccess
       ? ResultAsync.from(selector(this.getValueOrThrow()))
@@ -387,7 +391,7 @@ export class Result<TValue = Unit, TError = string> {
   }
 
   bind<TNewValue>(
-    selector: SelectorTK<TValue, Result<TNewValue, TError>>
+    selector: FunctionOfTtoK<TValue, Result<TNewValue, TError>>
   ): Result<TNewValue, TError> {
     return this.isSuccess
       ? selector(this.getValueOrThrow())
@@ -395,7 +399,7 @@ export class Result<TValue = Unit, TError = string> {
   }
 
   bindAsync<TNewValue>(
-    selector: SelectorTK<TValue, ResultAsync<TNewValue, TError>>
+    selector: FunctionOfTtoK<TValue, ResultAsync<TNewValue, TError>>
   ): ResultAsync<TNewValue, TError> {
     return this.isSuccess
       ? selector(this.getValueOrThrow())
@@ -445,7 +449,7 @@ export class Result<TValue = Unit, TError = string> {
   }
 
   finally<TNewValue>(
-    selector: SelectorTK<Result<TValue, TError>, TNewValue>
+    selector: FunctionOfTtoK<Result<TValue, TError>, TNewValue>
   ): TNewValue {
     return selector(this);
   }
@@ -468,7 +472,7 @@ export class Result<TValue = Unit, TError = string> {
 
   onSuccessTry(
     action: Action | ActionOfT<TValue>,
-    errorHandler: SelectorTK<unknown, TError>
+    errorHandler: FunctionOfTtoK<unknown, TError>
   ): Result<TValue, TError> {
     if (this.isFailure) {
       return this;
@@ -486,8 +490,8 @@ export class Result<TValue = Unit, TError = string> {
   }
 
   onSuccessTryAsync(
-    action: SelectorTK<TValue, Promise<void>>,
-    errorHander: SelectorTK<unknown, TError>
+    action: FunctionOfTtoK<TValue, Promise<void>>,
+    errorHander: FunctionOfTtoK<unknown, TError>
   ): ResultAsync<TValue, TError> {
     if (this.isFailure) {
       return ResultAsync.failure(this.getErrorOrThrow());
@@ -509,12 +513,12 @@ export class Result<TValue = Unit, TError = string> {
   }
 
   onSuccessTryMap<TNewValue>(
-    selector: SelectorT<TNewValue>,
-    errorHandler: SelectorTK<unknown, TError>
+    selector: FunctionOfT<TNewValue>,
+    errorHandler: FunctionOfTtoK<unknown, TError>
   ): Result<TNewValue, TError>;
   onSuccessTryMap<TNewValue>(
-    selector: SelectorT<TNewValue> | SelectorTK<TValue, TNewValue>,
-    errorHandler: SelectorTK<unknown, TError>
+    selector: FunctionOfT<TNewValue> | FunctionOfTtoK<TValue, TNewValue>,
+    errorHandler: FunctionOfTtoK<unknown, TError>
   ): Result<TNewValue, TError> {
     if (this.isFailure) {
       return Result.failure(this.getErrorOrThrow());

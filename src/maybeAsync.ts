@@ -3,12 +3,12 @@ import { Maybe } from './maybe';
 import { ResultAsync } from './resultAsync';
 import {
   ActionOfT,
+  FunctionOfT,
+  FunctionOfTtoK,
   isFunction,
   isPromise,
   MaybeMatcher,
   MaybeMatcherNoReturn,
-  SelectorT,
-  SelectorTK,
 } from './utilities';
 
 /**
@@ -66,13 +66,13 @@ export class MaybeAsync<TValue> {
   }
 
   map<TNewValue>(
-    selector: SelectorTK<TValue, TNewValue>
+    selector: FunctionOfTtoK<TValue, TNewValue>
   ): MaybeAsync<TNewValue> {
     return new MaybeAsync(this.value.then((m) => m.map(selector)));
   }
 
   mapAsync<TNewValue>(
-    selector: SelectorTK<TValue, Promise<TNewValue>>
+    selector: FunctionOfTtoK<TValue, Promise<TNewValue>>
   ): MaybeAsync<TNewValue> {
     return new MaybeAsync(
       this.value.then((m) => m.mapAsync(selector).toPromise())
@@ -83,7 +83,7 @@ export class MaybeAsync<TValue> {
     return new MaybeAsync(this.value.then((m) => m.tap(action)));
   }
 
-  tapAsync(action: SelectorTK<TValue, Promise<void>>): MaybeAsync<TValue> {
+  tapAsync(action: FunctionOfTtoK<TValue, Promise<void>>): MaybeAsync<TValue> {
     return new MaybeAsync(
       this.value.then(async (m) => {
         if (m.hasNoValue) {
@@ -98,13 +98,13 @@ export class MaybeAsync<TValue> {
   }
 
   bind<TNewValue>(
-    selector: SelectorTK<TValue, Maybe<TNewValue>>
+    selector: FunctionOfTtoK<TValue, Maybe<TNewValue>>
   ): MaybeAsync<TNewValue> {
     return new MaybeAsync(this.value.then((m) => m.bind(selector)));
   }
 
   bindAsync<TNewValue>(
-    selector: SelectorTK<TValue, MaybeAsync<TNewValue>>
+    selector: FunctionOfTtoK<TValue, MaybeAsync<TNewValue>>
   ): MaybeAsync<TNewValue> {
     return new MaybeAsync(
       this.value.then((m) => m.bindAsync(selector).toPromise())
@@ -124,11 +124,11 @@ export class MaybeAsync<TValue> {
   or(
     fallback:
       | TValue
-      | SelectorT<TValue>
+      | FunctionOfT<TValue>
       | Maybe<TValue>
-      | SelectorT<Maybe<TValue>>
+      | FunctionOfT<Maybe<TValue>>
       | MaybeAsync<TValue>
-      | SelectorT<MaybeAsync<TValue>>
+      | FunctionOfT<MaybeAsync<TValue>>
   ): MaybeAsync<TValue> {
     return new MaybeAsync(
       this.value.then((m) => {

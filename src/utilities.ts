@@ -1,5 +1,5 @@
-export type SelectorTK<T, K> = (v: T) => K;
-export type SelectorT<T> = () => Exclude<T, void>;
+export type FunctionOfTtoK<T, K> = (v: T) => K;
+export type FunctionOfT<T> = () => Exclude<T, void>;
 export type Predicate = () => boolean;
 export type PredicateOfT<T> = (v: T) => boolean;
 export type ActionOfT<T> = (v: T) => void;
@@ -22,8 +22,8 @@ export function isPromise<TValue>(value: unknown): value is Promise<TValue> {
 }
 
 export type MaybeMatcher<TValue, TNewValue> = {
-  some: SelectorTK<TValue, TNewValue>;
-  none: SelectorT<TNewValue>;
+  some: FunctionOfTtoK<TValue, TNewValue>;
+  none: FunctionOfT<TNewValue>;
 };
 export type MaybeMatcherNoReturn<TValue> = {
   some: ActionOfT<TValue>;
@@ -31,8 +31,8 @@ export type MaybeMatcherNoReturn<TValue> = {
 };
 
 export type ResultMatcher<TValue, TError, TNewValue> = {
-  success: SelectorTK<TValue, TNewValue>;
-  failure: SelectorTK<TError, TNewValue>;
+  success: FunctionOfTtoK<TValue, TNewValue>;
+  failure: FunctionOfTtoK<TError, TNewValue>;
 };
 
 export type ResultMatcherNoReturn<TValue, TError> = {

@@ -3,14 +3,14 @@ import { Unit } from './unit';
 import {
   Action,
   ActionOfT,
+  FunctionOfT,
+  FunctionOfTtoK,
   isDefined,
   isFunction,
   isPromise,
   PredicateOfT,
   ResultMatcher,
   ResultMatcherNoReturn,
-  SelectorT,
-  SelectorTK,
 } from './utilities';
 
 /**
@@ -48,7 +48,7 @@ export class ResultAsync<TValue = Unit, TError = string> {
    */
   static tryAsync<TValue, TError = string>(
     promise: Promise<TValue>,
-    errorHandler: SelectorTK<unknown, TError>
+    errorHandler: FunctionOfTtoK<unknown, TError>
   ): ResultAsync<TValue, TError>;
   /**
    * Creates a new successful Result with a Unit value.
@@ -59,7 +59,7 @@ export class ResultAsync<TValue = Unit, TError = string> {
    */
   static tryAsync<TError = string>(
     promise: Promise<void>,
-    errorHandler: SelectorTK<unknown, TError>
+    errorHandler: FunctionOfTtoK<unknown, TError>
   ): ResultAsync<Unit, TError>;
   /**
    * Creates a new successful Result with the inner value
@@ -71,7 +71,7 @@ export class ResultAsync<TValue = Unit, TError = string> {
    */
   static tryAsync<TValue = Unit, TError = string>(
     promise: Promise<TValue> | Promise<void>,
-    errorHandler: SelectorTK<unknown, TError>
+    errorHandler: FunctionOfTtoK<unknown, TError>
   ): ResultAsync<TValue, TError> {
     return new ResultAsync(
       promise
@@ -136,9 +136,9 @@ export class ResultAsync<TValue = Unit, TError = string> {
   }
 
   getValueOrDefault(defaultValue: TValue): Promise<TValue>;
-  getValueOrDefault(creator: SelectorT<TValue>): Promise<TValue>;
+  getValueOrDefault(creator: FunctionOfT<TValue>): Promise<TValue>;
   getValueOrDefault(
-    defaultOrValueCreator: TValue | SelectorT<TValue>
+    defaultOrValueCreator: TValue | FunctionOfT<TValue>
   ): Promise<TValue> {
     return this.value.then((r) =>
       r.getValueOrDefault(defaultOrValueCreator as TValue)
@@ -150,7 +150,7 @@ export class ResultAsync<TValue = Unit, TError = string> {
   }
 
   getErrorOrDefault(
-    defaultOrErrorCreator: TError | SelectorT<TError>
+    defaultOrErrorCreator: TError | FunctionOfT<TError>
   ): Promise<TError> {
     return this.value.then((r) => r.getErrorOrDefault(defaultOrErrorCreator));
   }
@@ -164,7 +164,7 @@ export class ResultAsync<TValue = Unit, TError = string> {
    */
   ensure(
     predicate: PredicateOfT<TValue>,
-    errorOrErrorCreator: TError | SelectorTK<TValue, TError>
+    errorOrErrorCreator: TError | FunctionOfTtoK<TValue, TError>
   ): ResultAsync<TValue, TError> {
     return new ResultAsync(
       this.value.then((result) => {
@@ -186,13 +186,13 @@ export class ResultAsync<TValue = Unit, TError = string> {
   }
 
   map<TNewValue>(
-    selector: SelectorTK<TValue, TNewValue>
+    selector: FunctionOfTtoK<TValue, TNewValue>
   ): ResultAsync<TNewValue, TError> {
     return new ResultAsync(this.value.then((r) => r.map(selector)));
   }
 
   mapAsync<TNewValue>(
-    selector: SelectorTK<TValue, Promise<TNewValue>>
+    selector: FunctionOfTtoK<TValue, Promise<TNewValue>>
   ): ResultAsync<TNewValue, TError> {
     return new ResultAsync(
       this.value.then((r) => r.mapAsync(selector).toPromise())
@@ -200,13 +200,13 @@ export class ResultAsync<TValue = Unit, TError = string> {
   }
 
   mapError<TNewError>(
-    selector: SelectorTK<TError, TNewError>
+    selector: FunctionOfTtoK<TError, TNewError>
   ): ResultAsync<TValue, TNewError> {
     return new ResultAsync(this.value.then((r) => r.mapError(selector)));
   }
 
   bind<TNewValue>(
-    selector: SelectorTK<TValue, Result<TNewValue, TError>>
+    selector: FunctionOfTtoK<TValue, Result<TNewValue, TError>>
   ): ResultAsync<TNewValue, TError> {
     return new ResultAsync(this.value.then((r) => r.bind(selector)));
   }
@@ -233,7 +233,7 @@ export class ResultAsync<TValue = Unit, TError = string> {
   }
 
   finally<TNewValue>(
-    selector: SelectorTK<Result<TValue, TError>, TNewValue>
+    selector: FunctionOfTtoK<Result<TValue, TError>, TNewValue>
   ): Promise<TNewValue> {
     return this.value.then((r) => r.finally(selector));
   }
@@ -248,7 +248,7 @@ export class ResultAsync<TValue = Unit, TError = string> {
 
   onSuccessTry(
     action: Action | ActionOfT<TValue>,
-    errorHandler: SelectorTK<unknown, TError>
+    errorHandler: FunctionOfTtoK<unknown, TError>
   ): ResultAsync<TValue, TError> {
     return new ResultAsync(
       this.value.then((r) => r.onSuccessTry(action, errorHandler))
@@ -256,8 +256,8 @@ export class ResultAsync<TValue = Unit, TError = string> {
   }
 
   onSuccessTryAsync(
-    action: SelectorTK<TValue, Promise<void>>,
-    errorHandler: SelectorTK<unknown, TError>
+    action: FunctionOfTtoK<TValue, Promise<void>>,
+    errorHandler: FunctionOfTtoK<unknown, TError>
   ): ResultAsync<TValue, TError> {
     return new ResultAsync(
       this.value.then((r) =>
@@ -274,7 +274,7 @@ export class ResultAsync<TValue = Unit, TError = string> {
    * @returns
    */
   toPromise(
-    errorHandler?: SelectorTK<unknown, TError>
+    errorHandler?: FunctionOfTtoK<unknown, TError>
   ): Promise<Result<TValue, TError>> {
     return isDefined(errorHandler)
       ? this.value.catch((error) => Result.failure(errorHandler(error)))
