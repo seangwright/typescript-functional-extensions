@@ -149,10 +149,18 @@ export class ResultAsync<TValue = Unit, TError = string> {
     return this.value.then((r) => r.getErrorOrThrow());
   }
 
+  getErrorOrDefault(defaultError: TError): Promise<TError>;
+  getErrorOrDefault(errorCreator: FunctionOfT<TError>): Promise<TError>;
   getErrorOrDefault(
     defaultOrErrorCreator: TError | FunctionOfT<TError>
   ): Promise<TError> {
-    return this.value.then((r) => r.getErrorOrDefault(defaultOrErrorCreator));
+    return this.value.then((r) => {
+      if (isFunction(defaultOrErrorCreator)){
+        return r.getErrorOrDefault(defaultOrErrorCreator)
+      }
+      
+      return r.getErrorOrDefault(defaultOrErrorCreator);
+    });
   }
 
   /**
@@ -220,7 +228,13 @@ export class ResultAsync<TValue = Unit, TError = string> {
     action: ActionOfT<TValue>
   ): ResultAsync<TValue, TError> {
     return new ResultAsync(
-      this.value.then((r) => r.tapIf(conditionOrPredicate, action))
+      this.value.then((r) => {
+        if (isFunction(conditionOrPredicate)){
+          return r.tapIf(conditionOrPredicate, action);
+        }
+
+        return r.tapIf(conditionOrPredicate, action)
+      })
     );
   }
 
