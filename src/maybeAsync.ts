@@ -20,15 +20,22 @@ export class MaybeAsync<TValue> {
    * @param value Can be a Promise or Maybe
    * @returns MaybeAsync
    */
+  static from<TValue>(maybe: Maybe<TValue>): MaybeAsync<TValue>;
+  static from<TValue>(promise: Promise<TValue>): MaybeAsync<TValue>;
+  static from<TValue>(maybePromise: Promise<Maybe<TValue>>): MaybeAsync<TValue>;
   static from<TValue>(
-    value: Promise<TValue | Maybe<TValue>> | Maybe<TValue>
+    valueOrPromiseOrMaybePromise:
+      | Promise<TValue | Maybe<TValue>>
+      | Maybe<TValue>
   ): MaybeAsync<TValue> {
-    if (isPromise(value)) {
+    if (isPromise(valueOrPromiseOrMaybePromise)) {
       return new MaybeAsync(
-        value.then((v) => (v instanceof Maybe ? v : Maybe.from(v)))
+        valueOrPromiseOrMaybePromise.then((v) =>
+          v instanceof Maybe ? v : Maybe.from(v)
+        )
       );
-    } else if (value instanceof Maybe) {
-      return new MaybeAsync(Promise.resolve(value));
+    } else if (valueOrPromiseOrMaybePromise instanceof Maybe) {
+      return new MaybeAsync(Promise.resolve(valueOrPromiseOrMaybePromise));
     }
 
     throw new Error('Value must be a Promise or Maybe');
@@ -140,6 +147,10 @@ export class MaybeAsync<TValue> {
           }
 
           if (!isFunction(fallback)) {
+            if (fallback instanceof Maybe) {
+              return m.or(fallback);
+            }
+
             return m.or(fallback);
           }
 
@@ -147,6 +158,10 @@ export class MaybeAsync<TValue> {
 
           if (result instanceof MaybeAsync) {
             return m.orAsync(result).toPromise();
+          }
+
+          if (result instanceof Maybe) {
+            return m.or(result);
           }
 
           return m.or(result);

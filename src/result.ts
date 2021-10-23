@@ -542,6 +542,17 @@ export class Result<TValue = Unit, TError = string> {
       ? `{ Result error: [${this.getErrorOrThrow()}] }`
       : `{ Result value: [${this.getValueOrThrow()}] }`;
   }
+
+  equals(result: Result<TValue, TError>): boolean {
+    return (
+      (this.isSuccess &&
+        result.isSuccess &&
+        this.getValueOrThrow() === result.getValueOrThrow()) ||
+      (this.isFailure &&
+        result.isFailure &&
+        this.getErrorOrThrow() === result.getErrorOrThrow())
+    );
+  }
 }
 
 type ResultState<TValue, TError> = {
