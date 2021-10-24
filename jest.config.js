@@ -12,4 +12,5 @@ export default {
     '^@/src/(.*)$': '<rootDir>/src/$1',
   },
   setupFilesAfterEnv: ['./test/expectExtensions.ts'],
+  extensionsToTreatAsEsm: ['.ts'],
 };

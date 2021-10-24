@@ -1,6 +1,6 @@
 import { Maybe } from '@/src/maybe';
 import { Result } from '@/src/result';
-import { isDefined, isFunction, SelectorT } from '@/src/utilities';
+import { FunctionOfT, isDefined, isFunction } from '@/src/utilities';
 
 expect.extend({
   toHaveNoValue<TValue>(received: Maybe<TValue>): MatchResponse {
@@ -127,7 +127,7 @@ type MatchResponse = { pass: boolean; message: () => string };
 
 function r(
   pass: boolean,
-  messageOrCreator: SelectorT<string> | string
+  messageOrCreator: FunctionOfT<string> | string
 ): MatchResponse {
   const message = isFunction(messageOrCreator)
     ? messageOrCreator

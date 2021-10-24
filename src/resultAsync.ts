@@ -15,14 +15,31 @@ import {
 } from './utilities';
 
 /**
- * Represents and asynchronous operation that could succeed with a value or fail with an error
+ * Represents and asynchronous Result that could succeed with a value or fail with an error
  */
 export class ResultAsync<TValue = Unit, TError = string> {
   /**
-   * Creates a new ResultAsync from the given value.
-   * @param value Can be a Promise or Result
+   * Creates a new ResultAsync from the given Result
+   * @param value a successful or failed Result
    * @returns
    */
+  static from<TValue, TError>(
+    value: Result<TValue, TError>
+  ): ResultAsync<TValue, TError>;
+  /**
+   * Creates a new ResultAsync from the given Promise
+   * @param value a Promise returning a value which will be wrapped in a successful Result
+   */
+  static from<TValue, TError>(
+    value: Promise<TValue>
+  ): ResultAsync<TValue, TError>;
+  /**
+   * Creates a new ResultAsync from the given Promise
+   * @param value a Promise returning a Result, if it resolves
+   */
+  static from<TValue, TError>(
+    value: Promise<Result<TValue, TError>>
+  ): ResultAsync<TValue, TError>;
   static from<TValue, TError>(
     value:
       | Promise<TValue>
@@ -40,9 +57,17 @@ export class ResultAsync<TValue = Unit, TError = string> {
     throw new Error('Value must be a Promise or Result instance');
   }
 
+  static try<TValue, TError = string>(
+    func: FunctionOfT<Promise<TValue>>,
+    errorHandler: FunctionOfTtoK<unknown, TError>
+  ): ResultAsync<TValue, TError>;
+  static try<TError = string>(
+    func: FunctionOfT<Promise<void>>,
+    errorHandler: FunctionOfTtoK<unknown, TError>
+  ): ResultAsync<Unit, TError>;
   /**
    * Creates a new successful Result with the inner value
-   * of the given Promise. If the Promise rjects, a failed Result will
+   * of the given Promise. If the Promise rejects, a failed Result will
    * be returned with an error created by the provided errorHandler
    * @param promise
    * @param errorHandler
@@ -67,18 +92,36 @@ export class ResultAsync<TValue = Unit, TError = string> {
    * of the given Promise (or Unit if no value).
    * If the Promise rejects, a failed Result will
    * be returned with an error created by the provided errorHandler
-   * @param promise
+   * @param promiseOrFunction
    * @param errorHandler
    */
   static try<TValue = Unit, TError = string>(
-    promise: Promise<TValue> | Promise<void>,
+    promiseOrFunction:
+      | Promise<TValue>
+      | Promise<void>
+      | FunctionOfT<Promise<TValue>>
+      | FunctionOfT<Promise<void>>,
     errorHandler: FunctionOfTtoK<unknown, TError>
   ): ResultAsync<TValue, TError> {
-    return new ResultAsync(
-      promise
-        .then((value) => Result.success<TValue, TError>(value!))
-        .catch((error) => Result.failure(errorHandler(error)))
-    );
+    if (isPromise(promiseOrFunction)) {
+      return new ResultAsync(
+        promiseOrFunction
+          .then((value) => Result.success<TValue, TError>(value!))
+          .catch((error) => Result.failure(errorHandler(error)))
+      );
+    }
+
+    try {
+      return new ResultAsync(
+        promiseOrFunction()
+          .then((value) => Result.success<TValue, TError>(value!))
+          .catch((error) => Result.failure(errorHandler(error)))
+      );
+    } catch (error: unknown) {
+      return new ResultAsync(
+        Promise.resolve(Result.failure(errorHandler(error)))
+      );
+    }
   }
 
   /**
@@ -124,19 +167,38 @@ export class ResultAsync<TValue = Unit, TError = string> {
     this.value = value.catch((error) => Result.failure(error));
   }
 
+  /**
+   * True if the Result was successful
+   */
   get isSuccess(): Promise<boolean> {
     return this.value.then((r) => r.isSuccess);
   }
 
+  /**
+   * True if the Result failed
+   */
   get isFailure(): Promise<boolean> {
     return this.value.then((r) => r.isFailure);
   }
 
+  /**
+   * Will return the inner value created from executing the Result
+   * if it was successful, otherwise it will throw an Error
+   * @returns the result of a successful Result
+   */
   getValueOrThrow(): Promise<TValue> {
     return this.value.then((r) => r.getValueOrThrow());
   }
 
+  /**
+   *
+   * @param defaultValue returned if the Result was not successful
+   */
   getValueOrDefault(defaultValue: TValue): Promise<TValue>;
+  /**
+   *
+   * @param valueFactory executed and returned if the Result was not successful
+   */
   getValueOrDefault(valueFactory: FunctionOfT<TValue>): Promise<TValue>;
   getValueOrDefault(
     defaultOrValueFactory: TValue | FunctionOfT<TValue>
@@ -146,11 +208,24 @@ export class ResultAsync<TValue = Unit, TError = string> {
     );
   }
 
+  /**
+   * Will return the inner error value of the Result
+   * if it failed, otherwise it will throw and Error
+   * @returns the error ofa failed Result
+   */
   getErrorOrThrow(): Promise<TError> {
     return this.value.then((r) => r.getErrorOrThrow());
   }
 
+  /**
+   *
+   * @param defaultError returned if the Result was successful
+   */
   getErrorOrDefault(defaultError: TError): Promise<TError>;
+  /**
+   *
+   * @param errorCreator
+   */
   getErrorOrDefault(errorCreator: FunctionOfT<TError>): Promise<TError>;
   getErrorOrDefault(
     defaultOrErrorCreator: TError | FunctionOfT<TError>
@@ -194,9 +269,19 @@ export class ResultAsync<TValue = Unit, TError = string> {
     );
   }
 
+  /**
+   * Converts the inner value of a successful Result to a new value.
+   * If the Result failed, no action is taken
+   * @param mapper function which accepts the current value as a parameter and returns a new value
+   */
   map<TNewValue>(
     mapper: FunctionOfTtoK<TValue, TNewValue>
   ): ResultAsync<TNewValue, TError>;
+  /**
+   * Converts the inner value of a successful Result to a new value.
+   * @param mapper function which accepts the current value as a parameter and returns a Promise containing
+   * the new value
+   */
   map<TNewValue>(
     mapper: FunctionOfTtoK<TValue, Promise<TNewValue>>
   ): ResultAsync<TNewValue, TError>;
@@ -211,31 +296,95 @@ export class ResultAsync<TValue = Unit, TError = string> {
           return Result.failure(r.getErrorOrThrow());
         }
 
-        const result = mapper(r.getValueOrThrow());
+        const promiseOrValue = mapper(r.getValueOrThrow());
 
-        if (isPromise(result)) {
-          return result.then((v) => Result.success(v));
+        if (isPromise(promiseOrValue)) {
+          return promiseOrValue.then((v) => Result.success(v));
         }
 
-        return Result.success(result);
+        return Result.success(promiseOrValue);
       })
     );
   }
 
   mapError<TNewError>(
-    selector: FunctionOfTtoK<TError, TNewError>
+    mapper: FunctionOfTtoK<TError, TNewError>
+  ): ResultAsync<TValue, TNewError>;
+  mapError<TNewError>(
+    mapper: FunctionOfTtoK<TError, Promise<TNewError>>
+  ): ResultAsync<TValue, TNewError>;
+  mapError<TNewError>(
+    mapper:
+      | FunctionOfTtoK<TError, TNewError>
+      | FunctionOfTtoK<TError, Promise<TNewError>>
   ): ResultAsync<TValue, TNewError> {
-    return new ResultAsync(this.value.then((r) => r.mapError(selector)));
+    return new ResultAsync(
+      this.value.then((r) => {
+        if (r.isSuccess) {
+          return Result.success(r.getValueOrThrow());
+        }
+
+        const promiseOrError = mapper(r.getErrorOrThrow());
+
+        if (isPromise(promiseOrError)) {
+          return promiseOrError.then((e) => Result.failure(e));
+        }
+
+        return Result.failure(promiseOrError);
+      })
+    );
   }
 
   bind<TNewValue>(
-    selector: FunctionOfTtoK<TValue, Result<TNewValue, TError>>
+    mapper: FunctionOfTtoK<TValue, Result<TNewValue, TError>>
+  ): ResultAsync<TNewValue, TError>;
+  bind<TNewValue>(
+    mapper: FunctionOfTtoK<TValue, ResultAsync<TNewValue, TError>>
+  ): ResultAsync<TNewValue, TError>;
+  bind<TNewValue>(
+    mapper:
+      | FunctionOfTtoK<TValue, Result<TNewValue, TError>>
+      | FunctionOfTtoK<TValue, ResultAsync<TNewValue, TError>>
   ): ResultAsync<TNewValue, TError> {
-    return new ResultAsync(this.value.then((r) => r.bind(selector)));
+    return new ResultAsync(
+      this.value.then((r) => {
+        if (r.isFailure) {
+          return Result.failure(r.getErrorOrThrow());
+        }
+
+        const resultOrResultAsync = mapper(r.getValueOrThrow());
+
+        if (resultOrResultAsync instanceof Result) {
+          return resultOrResultAsync;
+        }
+
+        return resultOrResultAsync.toPromise();
+      })
+    );
   }
 
-  tap(action: ActionOfT<TValue>): ResultAsync<TValue, TError> {
-    return new ResultAsync(this.value.then((r) => r.tap(action)));
+  tap(action: ActionOfT<TValue>): ResultAsync<TValue, TError>;
+  tap(
+    asyncAction: FunctionOfTtoK<TValue, Promise<void>>
+  ): ResultAsync<TValue, TError>;
+  tap(
+    action: ActionOfT<TValue> | FunctionOfTtoK<TValue, Promise<void>>
+  ): ResultAsync<TValue, TError> {
+    return new ResultAsync(
+      this.value.then(async (r) => {
+        if (r.isFailure) {
+          return r;
+        }
+
+        const voidOrPromise = action(r.getValueOrThrow());
+
+        if (isPromise(voidOrPromise)) {
+          await voidOrPromise;
+        }
+
+        return r;
+      })
+    );
   }
 
   tapIf(

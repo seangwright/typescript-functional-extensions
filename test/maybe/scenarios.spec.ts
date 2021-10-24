@@ -8,7 +8,7 @@ describe('Maybe', () => {
       await Maybe.tryFirst(getUsers(), (u) => u.hasConfirmedAccount)
         .tapAsync(sendPromotionalEmail)
         .bind(({ referralAccount }) => referralAccount)
-        .tapAsync(sendPromotionalEmail)
+        .tap(sendPromotionalEmail)
         .toPromise();
 
       function sendPromotionalEmail(user: User): Promise<void> {

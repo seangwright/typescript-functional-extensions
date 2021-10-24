@@ -1,5 +1,7 @@
 # Typescript Functional Extensions
 
+[![NPM](https://nodei.co/npm/typescript-functional-extensions.png)](https://nodei.co/npm/typescript-functional-extensions/)
+
 A TypeScript implementation of <https://github.com/vkhorikov/CSharpFunctionalExtensions>
 
 ## Monads

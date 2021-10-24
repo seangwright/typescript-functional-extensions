@@ -1,5 +1,6 @@
 import { Result } from '@/src/result';
 import { ResultAsync } from '@/src/resultAsync';
+import { Unit } from '@/src/unit';
 
 describe('ResultAsync', () => {
   test('success creates a successful Result', async () => {
@@ -44,9 +45,7 @@ describe('ResultAsync', () => {
   test('bindAsync to a failed ResultAsync will return a failed Result', async () => {
     const sut = Result.success();
 
-    const resultAsync = ResultAsync.from(
-      Promise.reject<Result<number, string>>('error')
-    );
+    const resultAsync = ResultAsync.from<Unit, string>(Promise.reject('error'));
 
     const newResult = await sut.bindAsync(() => resultAsync).toPromise();
 
