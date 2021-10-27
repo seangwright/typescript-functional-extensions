@@ -26,6 +26,22 @@ describe('Result', () => {
     });
   });
 
+  describe('isSuccess/isFailure', () => {
+    test('isSuccess returns true and isFailure returns false for a successful Result', () => {
+      const sut = Result.success();
+
+      expect(sut.isSuccess).toBe(true);
+      expect(sut.isFailure).toBe(false);
+    });
+
+    test('isSuccess returns false and isFailure returns true for a failed Result', () => {
+      const sut = Result.failure('ouch');
+
+      expect(sut.isSuccess).toBe(false);
+      expect(sut.isFailure).toBe(true);
+    });
+  });
+
   describe('successIf', () => {
     describe('condition', () => {
       test('creates a successful Result if the condition is true', () => {
