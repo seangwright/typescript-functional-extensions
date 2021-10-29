@@ -1,3 +1,4 @@
+export * from './api';
 export * from './maybe';
 export * from './maybeAsync';
 export * from './result';
