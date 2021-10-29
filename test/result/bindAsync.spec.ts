@@ -4,7 +4,7 @@ import { ResultAsync } from '@/src/resultAsync';
 describe('Result', () => {
   describe('bindAsync', () => {
     describe('promise', () => {
-      test('will call the mapper function when the original Result succeeds', async () => {
+      test('will call the projection function when the original Result succeeds', async () => {
         const sut = Result.success(1);
 
         const result = await sut
@@ -14,7 +14,7 @@ describe('Result', () => {
         expect(result).toSucceedWith(2);
       });
 
-      test('will not call the mapper function when the original Result fails', async () => {
+      test('will not call the projection function when the original Result fails', async () => {
         const error = 'error';
         let wasCalled = false;
         const sut = Result.failure<number>(error);
@@ -32,7 +32,7 @@ describe('Result', () => {
     });
 
     describe('ResultAsync', () => {
-      test('will call the mapper function when the original Result succeeds', async () => {
+      test('will call the projection function when the original Result succeeds', async () => {
         const sut = Result.success(1);
 
         const result = await sut
@@ -42,7 +42,7 @@ describe('Result', () => {
         expect(result).toSucceedWith(2);
       });
 
-      test('will not call the mapper function when the original Result fails', async () => {
+      test('will not call the projection function when the original Result fails', async () => {
         const error = 'error';
         let wasCalled = false;
         const sut = Result.failure<number>(error);

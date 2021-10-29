@@ -1,6 +1,7 @@
-import { Result } from '.';
+import { Result } from './result';
 import { ResultAsync } from './resultAsync';
 import { Unit } from './unit';
+import { Some } from './utilities';
 
 /**
  * Wraps a fetch request generated Promise in a ResultAsync,
@@ -13,7 +14,7 @@ import { Unit } from './unit';
  */
 export function fetchJsonResponse<TValue, TError = string>(
   request: Promise<Response>,
-  errorHandler: (error: unknown) => TError
+  errorHandler: (error: unknown) => Some<TError>
 ): ResultAsync<TValue, TError> {
   return ResultAsync.try<Response, TError>(request, (error: unknown) =>
     errorHandler(error)
@@ -33,7 +34,7 @@ export function fetchJsonResponse<TValue, TError = string>(
  */
 export function fetchResponse<TError = string>(
   request: Promise<Response>,
-  errorHandler: (error: unknown) => TError
+  errorHandler: (error: unknown) => Some<TError>
 ): ResultAsync<Unit, TError> {
   return ResultAsync.try<Response, TError>(request, (error: unknown) =>
     errorHandler(error)

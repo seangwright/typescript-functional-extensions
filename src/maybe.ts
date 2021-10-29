@@ -1,14 +1,19 @@
-import { isPromise, MaybeAsync } from '.';
+import { isSome } from '.';
+import { MaybeAsync } from './maybeAsync';
 import { Result } from './result';
+import { Unit } from './unit';
 import {
   ActionOfT,
   FunctionOfT,
   FunctionOfTtoK,
   isDefined,
   isFunction,
+  isPromise,
   MaybeMatcher,
   MaybeMatcherNoReturn,
+  None,
   PredicateOfT,
+  Some,
 } from './utilities';
 
 /**
@@ -16,16 +21,16 @@ import {
  */
 export class Maybe<TValue> {
   /**
-   * Creates a new maybe with a value
+   * Creates a new Maybe with a value
    * @param value The value of the new maybe
    * @returns
    */
-  static some<TValue>(value: TValue): Maybe<TValue> {
-    return new Maybe(value);
+  static some<TValue>(value: Some<TValue>): Maybe<TValue> {
+    return new Maybe<TValue>(value);
   }
 
   /**
-   * Creates a new maybe with no value
+   * Creates a new Maybe with no value
    * @returns {Maybe}
    */
   static none<TValue>(): Maybe<TValue> {
@@ -33,12 +38,12 @@ export class Maybe<TValue> {
   }
 
   /**
-   * Creates a new maybe. If no value is provided, it is equivalent to calling maybe.none(), and
-   * if a value is provided, it is equivalent to calling maybe.some(val)
-   * @param value The value of the new maybe.
+   * Creates a new Maybe. If no value is provided, it is equivalent to calling Maybe.none(), and
+   * if a value is provided, it is equivalent to calling Maybe.some(val)
+   * @param value The value of the new Maybe.
    * @returns {Maybe}
    */
-  static from<TValue>(value: TValue | undefined | null): Maybe<TValue> {
+  static from<TValue>(value: Some<TValue>): Maybe<TValue> {
     return new Maybe(value);
   }
 
@@ -56,17 +61,17 @@ export class Maybe<TValue> {
    * @param predicate
    */
   static tryFirst<TValue>(
-    values: TValue[],
-    predicate: PredicateOfT<TValue>
+    values: Some<TValue>[],
+    predicate: PredicateOfT<Some<TValue>>
   ): Maybe<TValue>;
   static tryFirst<TValue>(
-    values: TValue[],
-    predicate?: PredicateOfT<TValue>
+    values: Some<TValue>[],
+    predicate?: PredicateOfT<Some<TValue>>
   ): Maybe<TValue> {
-    if (typeof predicate === 'function') {
-      return Maybe.from(values.find(predicate));
+    if (isFunction(predicate)) {
+      return new Maybe(values.find(predicate));
     } else {
-      return Maybe.from(values[0]);
+      return new Maybe(values[0]);
     }
   }
 
@@ -78,20 +83,20 @@ export class Maybe<TValue> {
   static choose<TValue>(maybes: Maybe<TValue>[]): TValue[];
   /**
    * Returns only the Maybe instances of the array that have values,
-   * passing each value to the given mapper to be transformed to a new
+   * passing each value to the given projection to be transformed to a new
    * value
    * @param maybes
-   * @param mapper
+   * @param projection
    */
   static choose<TValue, TNewValue>(
     maybes: Maybe<TValue>[],
-    mapper: FunctionOfTtoK<TValue, TNewValue>
+    projection: FunctionOfTtoK<TValue, Some<TNewValue>>
   ): TNewValue[];
   static choose<TValue, TNewValue>(
     maybes: Maybe<TValue>[],
-    mapper?: FunctionOfTtoK<TValue, TNewValue>
+    projection?: FunctionOfTtoK<TValue, Some<TNewValue>>
   ): TValue[] | TNewValue[] {
-    if (typeof mapper === 'function') {
+    if (typeof projection === 'function') {
       const values: TNewValue[] = [];
 
       for (const m of maybes) {
@@ -101,7 +106,7 @@ export class Maybe<TValue> {
 
         const original = m.getValueOrThrow();
 
-        values.push(mapper(original));
+        values.push(projection(original));
       }
 
       return values;
@@ -121,7 +126,7 @@ export class Maybe<TValue> {
     }
   }
 
-  private value: TValue | undefined;
+  private value: Some<TValue> | undefined;
 
   /**
    * Returns true if the Maybe contains a value
@@ -137,7 +142,7 @@ export class Maybe<TValue> {
     return !this.hasValue;
   }
 
-  protected constructor(value?: TValue | null) {
+  protected constructor(value: Some<TValue> | None) {
     this.value = isDefined(value) ? value : undefined;
   }
 
@@ -146,16 +151,16 @@ export class Maybe<TValue> {
    * and the default value if there is none
    * @param defaultValue
    */
-  getValueOrDefault(defaultValue: TValue): TValue;
+  getValueOrDefault(defaultValue: Some<TValue>): TValue;
   /**
    * Returns the value of the Maybe if it has one,
    * and returns the result of the factory function if
    * there is none
    * @param factory
    */
-  getValueOrDefault(factory: FunctionOfT<TValue>): TValue;
+  getValueOrDefault(factory: FunctionOfT<Some<TValue>>): TValue;
   getValueOrDefault(
-    defaultValueOrFactory: TValue | FunctionOfT<TValue>
+    defaultValueOrFactory: Some<TValue> | FunctionOfT<Some<TValue>>
   ): TValue {
     if (isDefined(this.value)) {
       return this.value;
@@ -173,8 +178,8 @@ export class Maybe<TValue> {
    * and Error if there is none
    * @returns
    */
-  getValueOrThrow(): TValue {
-    if (isDefined(this.value)) {
+  getValueOrThrow(): Some<TValue> {
+    if (isSome(this.value)) {
       return this.value;
     }
 
@@ -183,27 +188,29 @@ export class Maybe<TValue> {
 
   /**
    * Converts the value of the Maybe, if there is one, to a new value
-   * as defined by the provided mapper function
-   * @param mapper
+   * as defined by the provided projection function
+   * @param projection
    * @returns
    */
-  map<TNewValue>(mapper: FunctionOfTtoK<TValue, TNewValue>): Maybe<TNewValue> {
+  map<TNewValue>(
+    projection: FunctionOfTtoK<TValue, Some<TNewValue>>
+  ): Maybe<TNewValue> {
     return this.hasValue
-      ? new Maybe(mapper(this.getValueOrThrow()))
+      ? new Maybe(projection(this.getValueOrThrow()))
       : Maybe.none();
   }
 
   /**
    * Converts the value of the Maybe, if there is one, to a new value
-   * as defined by the provided mapper, wrapping the asynchronous result in a MaybeAsync
-   * @param mapper
+   * as defined by the provided projection, wrapping the asynchronous result in a MaybeAsync
+   * @param projection
    * @returns
    */
   mapAsync<TNewValue>(
-    mapper: FunctionOfTtoK<TValue, Promise<TNewValue>>
+    projection: FunctionOfTtoK<TValue, Promise<Some<TNewValue>>>
   ): MaybeAsync<TNewValue> {
     return this.hasValue
-      ? MaybeAsync.from(mapper(this.getValueOrThrow()))
+      ? MaybeAsync.from(projection(this.getValueOrThrow()))
       : MaybeAsync.none();
   }
 
@@ -229,72 +236,82 @@ export class Maybe<TValue> {
   tapAsync(
     asyncAction: FunctionOfTtoK<TValue, Promise<void>>
   ): MaybeAsync<TValue> {
-    if (this.hasValue) {
-      return MaybeAsync.from(
-        new Promise<TValue>((resolve) => {
-          const value = this.getValueOrThrow();
-          asyncAction(value).then(() => resolve(value));
-        })
-      );
+    if (this.hasNoValue) {
+      return MaybeAsync.none();
     }
 
-    return MaybeAsync.none();
+    const promise = new Promise<Some<TValue>>((resolve) => {
+      const value = this.getValueOrThrow();
+      asyncAction(value).then(() => resolve(value));
+    });
+
+    return MaybeAsync.from(promise);
   }
 
   /**
    * Converts the value of the Maybe, if it has one, to a new Maybe
-   * @param mapper
+   * @param projection
    * @returns
    */
   bind<TNewValue>(
-    mapper: FunctionOfTtoK<TValue, Maybe<TNewValue>>
+    projection: FunctionOfTtoK<TValue, Maybe<Some<TNewValue>>>
   ): Maybe<TNewValue> {
-    return this.hasValue ? mapper(this.getValueOrThrow()) : Maybe.none();
+    return this.hasValue ? projection(this.getValueOrThrow()) : Maybe.none();
   }
 
   /**
    * Converts the value of the Maybe, if it has one, to a new
    * MaybeAsync
-   * @param mapper
+   * @param projection
    * @returns
    */
   bindAsync<TNewValue>(
-    mapper: FunctionOfTtoK<TValue, MaybeAsync<TNewValue>>
+    projection: FunctionOfTtoK<TValue, MaybeAsync<Some<TNewValue>>>
   ): MaybeAsync<TNewValue> {
-    return this.hasValue ? mapper(this.getValueOrThrow()) : MaybeAsync.none();
+    return this.hasValue
+      ? projection(this.getValueOrThrow())
+      : MaybeAsync.none();
   }
 
+  /**
+   * Maps the value of the Maybe, if it has one, using the given projection some function,
+   * and the none function otherwise
+   * @param projection
+   */
+  match<TNewValue>(projection: MaybeMatcher<TValue, TNewValue>): TNewValue;
   /**
    * Executes the some function of the given matcher if the Maybe has a value,
    * and the none function if there is no value
    * @param matcher
    * @returns
    */
-  match(matcher: MaybeMatcherNoReturn<TValue>): void;
-  /**
-   * Maps the value of the Maybe, if it has one, using the given mapper some function,
-   * and the none function otherwise
-   * @param mapper
-   */
-  match<TNewValue>(mapper: MaybeMatcher<TValue, TNewValue>): TNewValue;
+  match(matcher: MaybeMatcherNoReturn<TValue>): Unit;
   match<TNewValue>(
-    matcherOrMapper:
+    matcherOrprojection:
       | MaybeMatcher<TValue, TNewValue>
       | MaybeMatcherNoReturn<TValue>
-  ): TNewValue | void {
-    return this.hasValue
-      ? matcherOrMapper.some(this.getValueOrThrow())
-      : matcherOrMapper.none();
+  ): TValue | Unit {
+    if (this.hasValue) {
+      const someResult = matcherOrprojection.some(this.getValueOrThrow());
+
+      return isDefined(someResult) ? someResult : Unit.Instance;
+    }
+
+    const noneResult = matcherOrprojection.none();
+
+    return isDefined(noneResult) ? noneResult : Unit.Instance;
   }
 
   /**
    * Executes the given action if the Maybe has a value
    * @param action
    */
-  execute(action: ActionOfT<TValue>): void {
+  execute(action: ActionOfT<TValue>): Unit {
     if (this.hasValue) {
       action(this.getValueOrThrow());
     }
+
+    return Unit.Instance;
   }
 
   /**
@@ -302,7 +319,7 @@ export class Maybe<TValue> {
    * the fallbackValue returned in a Maybe
    * @param fallbackValue
    */
-  or(fallbackValue: TValue): Maybe<TValue>;
+  or(fallbackValue: Some<TValue>): Maybe<TValue>;
   /**
    * Returns the Maybe if it has a value, otherwise it returns the fallbackMaybe
    * @param fallbackMaybe
@@ -313,7 +330,7 @@ export class Maybe<TValue> {
    * returns the value of the fallbackFactory wrapped in a Maybe
    * @param fallbackfactory
    */
-  or(fallbackfactory: FunctionOfT<TValue>): Maybe<TValue>;
+  or(fallbackfactory: FunctionOfT<Some<TValue>>): Maybe<TValue>;
   /**
    * Returns the Maybe if it has a value, otherwise executes the fallbackMaybeFactory
    * and returns its result
@@ -322,9 +339,9 @@ export class Maybe<TValue> {
   or(fallbackMaybefactory: FunctionOfT<Maybe<TValue>>): Maybe<TValue>;
   or(
     fallback:
-      | TValue
+      | Some<TValue>
       | Maybe<TValue>
-      | FunctionOfT<TValue>
+      | FunctionOfT<Some<TValue>>
       | FunctionOfT<Maybe<TValue>>
   ): Maybe<TValue> {
     if (this.hasValue) {
@@ -356,8 +373,10 @@ export class Maybe<TValue> {
    * returns the fallbackPromise, wrapped in a MaybeAsync
    * @param fallbackPromise
    */
-  orAsync(fallbackPromise: Promise<TValue>): MaybeAsync<TValue>;
-  orAsync(fallback: MaybeAsync<TValue> | Promise<TValue>): MaybeAsync<TValue> {
+  orAsync(fallbackPromise: Promise<Some<TValue>>): MaybeAsync<TValue>;
+  orAsync(
+    fallback: MaybeAsync<TValue> | Promise<Some<TValue>>
+  ): MaybeAsync<TValue> {
     if (this.hasValue) {
       return MaybeAsync.some(this.getValueOrThrow());
     }
@@ -375,7 +394,7 @@ export class Maybe<TValue> {
    * @param error
    * @returns
    */
-  toResult<TError>(error: TError): Result<TValue, TError> {
+  toResult<TError>(error: Some<TError>): Result<TValue, TError> {
     return this.hasValue
       ? Result.success(this.getValueOrThrow())
       : Result.failure(error);

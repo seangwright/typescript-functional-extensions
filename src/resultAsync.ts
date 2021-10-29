@@ -1,9 +1,9 @@
-import { AsyncActionOfT } from '.';
 import { Result } from './result';
 import { Unit } from './unit';
 import {
   Action,
   ActionOfT,
+  AsyncActionOfT,
   FunctionOfT,
   FunctionOfTtoK,
   isDefined,
@@ -12,6 +12,7 @@ import {
   PredicateOfT,
   ResultMatcher,
   ResultMatcherNoReturn,
+  Some,
 } from './utilities';
 
 /**
@@ -31,7 +32,7 @@ export class ResultAsync<TValue = Unit, TError = string> {
    * @param value a Promise returning a value which will be wrapped in a successful Result
    */
   static from<TValue, TError>(
-    value: Promise<TValue>
+    value: Promise<Some<TValue>>
   ): ResultAsync<TValue, TError>;
   /**
    * Creates a new ResultAsync from the given Promise
@@ -42,7 +43,7 @@ export class ResultAsync<TValue = Unit, TError = string> {
   ): ResultAsync<TValue, TError>;
   static from<TValue, TError>(
     value:
-      | Promise<TValue>
+      | Promise<Some<TValue>>
       | Promise<Result<TValue, TError>>
       | Result<TValue, TError>
   ): ResultAsync<TValue, TError> {
@@ -58,12 +59,12 @@ export class ResultAsync<TValue = Unit, TError = string> {
   }
 
   static try<TValue, TError = string>(
-    func: FunctionOfT<Promise<TValue>>,
-    errorHandler: FunctionOfTtoK<unknown, TError>
+    func: FunctionOfT<Promise<Some<TValue>>>,
+    errorHandler: FunctionOfTtoK<unknown, Some<TError>>
   ): ResultAsync<TValue, TError>;
   static try<TError = string>(
     func: FunctionOfT<Promise<void>>,
-    errorHandler: FunctionOfTtoK<unknown, TError>
+    errorHandler: FunctionOfTtoK<unknown, Some<TError>>
   ): ResultAsync<Unit, TError>;
   /**
    * Creates a new successful Result with the inner value
@@ -73,8 +74,8 @@ export class ResultAsync<TValue = Unit, TError = string> {
    * @param errorHandler
    */
   static try<TValue, TError = string>(
-    promise: Promise<TValue>,
-    errorHandler: FunctionOfTtoK<unknown, TError>
+    promise: Promise<Some<TValue>>,
+    errorHandler: FunctionOfTtoK<unknown, Some<TError>>
   ): ResultAsync<TValue, TError>;
   /**
    * Creates a new successful Result with a Unit value.
@@ -85,7 +86,7 @@ export class ResultAsync<TValue = Unit, TError = string> {
    */
   static try<TError = string>(
     promise: Promise<void>,
-    errorHandler: FunctionOfTtoK<unknown, TError>
+    errorHandler: FunctionOfTtoK<unknown, Some<TError>>
   ): ResultAsync<Unit, TError>;
   /**
    * Creates a new successful Result with the inner value
@@ -97,11 +98,11 @@ export class ResultAsync<TValue = Unit, TError = string> {
    */
   static try<TValue = Unit, TError = string>(
     promiseOrFunction:
-      | Promise<TValue>
+      | Promise<Some<TValue>>
       | Promise<void>
-      | FunctionOfT<Promise<TValue>>
+      | FunctionOfT<Promise<Some<TValue>>>
       | FunctionOfT<Promise<void>>,
-    errorHandler: FunctionOfTtoK<unknown, TError>
+    errorHandler: FunctionOfTtoK<unknown, Some<TError>>
   ): ResultAsync<TValue, TError> {
     if (isPromise(promiseOrFunction)) {
       return new ResultAsync(
@@ -133,7 +134,7 @@ export class ResultAsync<TValue = Unit, TError = string> {
    * @param value
    */
   static success<TValue, TError = string>(
-    value: TValue
+    value: Some<TValue>
   ): ResultAsync<TValue, TError>;
   /**
    * Creates a new successful ResultAsync with the given value (or Unit if no value is provided)
@@ -141,7 +142,7 @@ export class ResultAsync<TValue = Unit, TError = string> {
    * @returns
    */
   static success<TValue, TError = string>(
-    value?: never | TValue
+    value?: Some<TValue>
   ): ResultAsync<TValue, TError> {
     const result = isDefined(value)
       ? Result.success<TValue, TError>(value)
@@ -156,7 +157,7 @@ export class ResultAsync<TValue = Unit, TError = string> {
    * @returns
    */
   static failure<TValue = Unit, TError = string>(
-    error: TError
+    error: Some<TError>
   ): ResultAsync<TValue, TError> {
     return new ResultAsync(Promise.resolve(Result.failure(error)));
   }
@@ -186,7 +187,7 @@ export class ResultAsync<TValue = Unit, TError = string> {
    * if it was successful, otherwise it will throw an Error
    * @returns the result of a successful Result
    */
-  getValueOrThrow(): Promise<TValue> {
+  getValueOrThrow(): Promise<Some<TValue>> {
     return this.value.then((r) => r.getValueOrThrow());
   }
 
@@ -194,17 +195,21 @@ export class ResultAsync<TValue = Unit, TError = string> {
    *
    * @param defaultValue returned if the Result was not successful
    */
-  getValueOrDefault(defaultValue: TValue): Promise<TValue>;
+  getValueOrDefault(defaultValue: Some<TValue>): Promise<Some<TValue>>;
   /**
    *
    * @param valueFactory executed and returned if the Result was not successful
    */
-  getValueOrDefault(valueFactory: FunctionOfT<TValue>): Promise<TValue>;
   getValueOrDefault(
-    defaultOrValueFactory: TValue | FunctionOfT<TValue>
-  ): Promise<TValue> {
+    valueFactory: FunctionOfT<Some<TValue>>
+  ): Promise<Some<TValue>>;
+  getValueOrDefault(
+    defaultOrValueFactory: Some<TValue> | FunctionOfT<Some<TValue>>
+  ): Promise<Some<TValue>> {
     return this.value.then((r) =>
-      r.getValueOrDefault(defaultOrValueFactory as TValue)
+      isFunction(defaultOrValueFactory)
+        ? r.getValueOrDefault(defaultOrValueFactory)
+        : r.getValueOrDefault(defaultOrValueFactory)
     );
   }
 
@@ -213,7 +218,7 @@ export class ResultAsync<TValue = Unit, TError = string> {
    * if it failed, otherwise it will throw and Error
    * @returns the error ofa failed Result
    */
-  getErrorOrThrow(): Promise<TError> {
+  getErrorOrThrow(): Promise<Some<TError>> {
     return this.value.then((r) => r.getErrorOrThrow());
   }
 
@@ -221,15 +226,17 @@ export class ResultAsync<TValue = Unit, TError = string> {
    *
    * @param defaultError returned if the Result was successful
    */
-  getErrorOrDefault(defaultError: TError): Promise<TError>;
+  getErrorOrDefault(defaultError: Some<TError>): Promise<Some<TError>>;
   /**
    *
    * @param errorCreator
    */
-  getErrorOrDefault(errorCreator: FunctionOfT<TError>): Promise<TError>;
   getErrorOrDefault(
-    defaultOrErrorCreator: TError | FunctionOfT<TError>
-  ): Promise<TError> {
+    errorCreator: FunctionOfT<Some<TError>>
+  ): Promise<Some<TError>>;
+  getErrorOrDefault(
+    defaultOrErrorCreator: Some<TError> | FunctionOfT<Some<TError>>
+  ): Promise<Some<TError>> {
     return this.value.then((r) => {
       if (isFunction(defaultOrErrorCreator)) {
         return r.getErrorOrDefault(defaultOrErrorCreator);
@@ -248,7 +255,7 @@ export class ResultAsync<TValue = Unit, TError = string> {
    */
   ensure(
     predicate: PredicateOfT<TValue>,
-    errorOrErrorCreator: TError | FunctionOfTtoK<TValue, TError>
+    errorOrErrorCreator: Some<TError> | FunctionOfTtoK<TValue, Some<TError>>
   ): ResultAsync<TValue, TError> {
     return new ResultAsync(
       this.value.then((result) => {
@@ -272,23 +279,23 @@ export class ResultAsync<TValue = Unit, TError = string> {
   /**
    * Converts the inner value of a successful Result to a new value.
    * If the Result failed, no action is taken
-   * @param mapper function which accepts the current value as a parameter and returns a new value
+   * @param projection function which accepts the current value as a parameter and returns a new value
    */
   map<TNewValue>(
-    mapper: FunctionOfTtoK<TValue, TNewValue>
+    projection: FunctionOfTtoK<TValue, Some<TNewValue>>
   ): ResultAsync<TNewValue, TError>;
   /**
    * Converts the inner value of a successful Result to a new value.
-   * @param mapper function which accepts the current value as a parameter and returns a Promise containing
+   * @param projection function which accepts the current value as a parameter and returns a Promise containing
    * the new value
    */
   map<TNewValue>(
-    mapper: FunctionOfTtoK<TValue, Promise<TNewValue>>
+    projection: FunctionOfTtoK<TValue, Promise<Some<TNewValue>>>
   ): ResultAsync<TNewValue, TError>;
   map<TNewValue>(
-    mapper:
-      | FunctionOfTtoK<TValue, TNewValue>
-      | FunctionOfTtoK<TValue, Promise<TNewValue>>
+    projection:
+      | FunctionOfTtoK<TValue, Some<TNewValue>>
+      | FunctionOfTtoK<TValue, Promise<Some<TNewValue>>>
   ): ResultAsync<TNewValue, TError> {
     return new ResultAsync(
       this.value.then((r) => {
@@ -296,7 +303,7 @@ export class ResultAsync<TValue = Unit, TError = string> {
           return Result.failure(r.getErrorOrThrow());
         }
 
-        const promiseOrValue = mapper(r.getValueOrThrow());
+        const promiseOrValue = projection(r.getValueOrThrow());
 
         if (isPromise(promiseOrValue)) {
           return promiseOrValue.then((v) => Result.success(v));
@@ -308,15 +315,15 @@ export class ResultAsync<TValue = Unit, TError = string> {
   }
 
   mapError<TNewError>(
-    mapper: FunctionOfTtoK<TError, TNewError>
+    projection: FunctionOfTtoK<TError, Some<TNewError>>
   ): ResultAsync<TValue, TNewError>;
   mapError<TNewError>(
-    mapper: FunctionOfTtoK<TError, Promise<TNewError>>
+    projection: FunctionOfTtoK<TError, Promise<Some<TNewError>>>
   ): ResultAsync<TValue, TNewError>;
   mapError<TNewError>(
-    mapper:
-      | FunctionOfTtoK<TError, TNewError>
-      | FunctionOfTtoK<TError, Promise<TNewError>>
+    projection:
+      | FunctionOfTtoK<TError, Some<TNewError>>
+      | FunctionOfTtoK<TError, Promise<Some<TNewError>>>
   ): ResultAsync<TValue, TNewError> {
     return new ResultAsync(
       this.value.then((r) => {
@@ -324,7 +331,7 @@ export class ResultAsync<TValue = Unit, TError = string> {
           return Result.success(r.getValueOrThrow());
         }
 
-        const promiseOrError = mapper(r.getErrorOrThrow());
+        const promiseOrError = projection(r.getErrorOrThrow());
 
         if (isPromise(promiseOrError)) {
           return promiseOrError.then((e) => Result.failure(e));
@@ -336,13 +343,13 @@ export class ResultAsync<TValue = Unit, TError = string> {
   }
 
   bind<TNewValue>(
-    mapper: FunctionOfTtoK<TValue, Result<TNewValue, TError>>
+    projection: FunctionOfTtoK<TValue, Result<TNewValue, TError>>
   ): ResultAsync<TNewValue, TError>;
   bind<TNewValue>(
-    mapper: FunctionOfTtoK<TValue, ResultAsync<TNewValue, TError>>
+    projection: FunctionOfTtoK<TValue, ResultAsync<TNewValue, TError>>
   ): ResultAsync<TNewValue, TError>;
   bind<TNewValue>(
-    mapper:
+    projection:
       | FunctionOfTtoK<TValue, Result<TNewValue, TError>>
       | FunctionOfTtoK<TValue, ResultAsync<TNewValue, TError>>
   ): ResultAsync<TNewValue, TError> {
@@ -352,7 +359,7 @@ export class ResultAsync<TValue = Unit, TError = string> {
           return Result.failure(r.getErrorOrThrow());
         }
 
-        const resultOrResultAsync = mapper(r.getValueOrThrow());
+        const resultOrResultAsync = projection(r.getValueOrThrow());
 
         if (resultOrResultAsync instanceof Result) {
           return resultOrResultAsync;
@@ -415,17 +422,21 @@ export class ResultAsync<TValue = Unit, TError = string> {
   }
 
   match<TNewValue>(
+    matcher: ResultMatcher<TValue, TError, TNewValue>
+  ): Promise<Some<TNewValue>>;
+  match(matcher: ResultMatcherNoReturn<TValue, TError>): Promise<Unit>;
+  match<TNewValue>(
     matcher:
       | ResultMatcher<TValue, TError, TNewValue>
       | ResultMatcherNoReturn<TValue, TError>
-  ): Promise<TNewValue | void> {
+  ): Promise<Some<TNewValue> | Unit> {
     return this.value.then((r) => r.match(matcher));
   }
 
   finally<TNewValue>(
-    mapper: FunctionOfTtoK<Result<TValue, TError>, TNewValue>
-  ): Promise<TNewValue> {
-    return this.value.then((r) => r.finally(mapper));
+    projection: FunctionOfTtoK<Result<TValue, TError>, Some<TNewValue>>
+  ): Promise<Some<TNewValue>> {
+    return this.value.then((r) => r.finally(projection));
   }
 
   onFailure(action: ActionOfT<TError>): ResultAsync<TValue, TError>;
@@ -458,19 +469,19 @@ export class ResultAsync<TValue = Unit, TError = string> {
 
   onSuccessTry(
     action: Action,
-    errorHandler: FunctionOfTtoK<unknown, TError>
+    errorHandler: FunctionOfTtoK<unknown, Some<TError>>
   ): ResultAsync<TValue, TError>;
   onSuccessTry(
     action: ActionOfT<TValue>,
-    errorHandler: FunctionOfTtoK<unknown, TError>
+    errorHandler: FunctionOfTtoK<unknown, Some<TError>>
   ): ResultAsync<TValue, TError>;
   onSuccessTry(
     action: FunctionOfTtoK<TValue, Promise<void>>,
-    errorHandler: FunctionOfTtoK<unknown, TError>
+    errorHandler: FunctionOfTtoK<unknown, Some<TError>>
   ): ResultAsync<TValue, TError>;
   onSuccessTry(
     action: Action | ActionOfT<TValue> | FunctionOfTtoK<TValue, Promise<void>>,
-    errorHandler: FunctionOfTtoK<unknown, TError>
+    errorHandler: FunctionOfTtoK<unknown, Some<TError>>
   ): ResultAsync<TValue, TError> {
     return new ResultAsync(
       this.value.then((r) => {
@@ -503,7 +514,7 @@ export class ResultAsync<TValue = Unit, TError = string> {
    * @returns
    */
   toPromise(
-    errorHandler?: FunctionOfTtoK<unknown, TError>
+    errorHandler?: FunctionOfTtoK<unknown, Some<TError>>
   ): Promise<Result<TValue, TError>> {
     return isDefined(errorHandler)
       ? this.value.catch((error) => Result.failure(errorHandler(error)))

@@ -2,7 +2,14 @@
 
 [![NPM](https://nodei.co/npm/typescript-functional-extensions.png)](https://nodei.co/npm/typescript-functional-extensions/)
 
-A TypeScript implementation of <https://github.com/vkhorikov/CSharpFunctionalExtensions>
+A TypeScript implementation of <https://github.com/vkhorikov/CSharpFunctionalExtensions>, including `Maybe` and `Result` monads.
+
+## Further Reading
+
+- [Functional Extensions for C#](https://github.com/vkhorikov/CSharpFunctionalExtensions)
+- [Functors, Applicatives, And Monads In Pictures](https://adit.io/posts/2013-04-17-functors,_applicatives,_and_monads_in_pictures.html)
+- [Modeling Missing Data - The Maybe Monad](https://dev.to/seangwright/kentico-xperience-design-patterns-modeling-missing-data-the-maybe-monad-2c7i)
+- [Railway Oriented Programming](https://fsharpforfunandprofit.com/rop/)
 
 ## Monads
 

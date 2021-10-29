@@ -1,17 +1,22 @@
-import { AsyncActionOfT, isPromise, Predicate } from '.';
+import { isSome } from '.';
 import { ResultAsync } from './resultAsync';
 import { Unit } from './unit';
 import {
   Action,
   ActionOfT,
+  AsyncActionOfT,
   FunctionOfT,
   FunctionOfTtoK,
   isDefined,
   isFunction,
+  isPromise,
   never,
+  None,
+  Predicate,
   PredicateOfT,
   ResultMatcher,
   ResultMatcherNoReturn,
+  Some,
 } from './utilities';
 
 /**
@@ -28,7 +33,7 @@ export class Result<TValue = Unit, TError = string> {
    * @param value the result of the successful operation
    */
   static success<TValue, TError = string>(
-    value: TValue
+    value: Some<TValue>
   ): Result<TValue, TError>;
   /**
    * Creates a new successful Result with the given value
@@ -36,27 +41,28 @@ export class Result<TValue = Unit, TError = string> {
    * @returns new successful Result
    */
   static success<TValue, TError = string>(
-    value?: never | TValue
+    value?: Some<TValue> | None
   ): Result<TValue, TError> {
-    return isDefined(value)
-      ? new Result({ value, isSuccess: true })
+    return isSome(value)
+      ? new Result<TValue, TError>({ value, error: undefined, isSuccess: true })
       : (new Result<Unit, TError>({
           value: Unit.Instance,
+          error: undefined,
           isSuccess: true,
         }) as Result<TValue, TError>);
   }
 
   static successIf<TValue = Unit, TError = string>(
     condition: boolean,
-    state: { value: TValue; error: TError }
+    state: { value: Some<TValue>; error: Some<TError> }
   ): Result<TValue, TError>;
   static successIf<TValue = Unit, TError = string>(
     predicate: Predicate,
-    state: { value: TValue; error: TError }
+    state: { value: Some<TValue>; error: Some<TError> }
   ): Result<TValue, TError>;
   static successIf<TValue = Unit, TError = string>(
     conditionOrPredicate: boolean | Predicate,
-    state: { value: TValue; error: TError }
+    state: { value: Some<TValue>; error: Some<TError> }
   ): Result<TValue, TError> {
     const condition = isFunction(conditionOrPredicate)
       ? conditionOrPredicate()
@@ -73,22 +79,26 @@ export class Result<TValue = Unit, TError = string> {
    * @returns new failed Result
    */
   static failure<TValue = Unit, TError = string>(
-    error: TError
+    error: Some<TError>
   ): Result<TValue, TError> {
-    return new Result({ error, isSuccess: false });
+    return new Result<TValue, TError>({
+      value: undefined,
+      error,
+      isSuccess: false,
+    });
   }
 
   static failureIf<TValue = Unit, TError = string>(
     condition: boolean,
-    state: { value: TValue; error: TError }
+    state: { value: Some<TValue>; error: Some<TError> }
   ): Result<TValue, TError>;
   static failureIf<TValue = Unit, TError = string>(
     predicate: Predicate,
-    state: { value: TValue; error: TError }
+    state: { value: Some<TValue>; error: Some<TError> }
   ): Result<TValue, TError>;
   static failureIf<TValue = Unit, TError = string>(
     conditionOrPredicate: boolean | Predicate,
-    state: { value: TValue; error: TError }
+    state: { value: Some<TValue>; error: Some<TError> }
   ): Result<TValue, TError> {
     const condition = isFunction(conditionOrPredicate)
       ? conditionOrPredicate()
@@ -108,25 +118,25 @@ export class Result<TValue = Unit, TError = string> {
    * Returns only the values of successful Results, mapped to new values
    * with the given selector function
    * @param results
-   * @param mapper
+   * @param projection
    */
   static choose<TValue, TNewValue, TError>(
     results: Result<TValue, TError>[],
-    mapper: FunctionOfTtoK<TValue, TNewValue>
+    projection: FunctionOfTtoK<TValue, TNewValue>
   ): TNewValue[];
   /**
    * Returns only the values of successful Results. If a selector function
    * is provided, it will be used to map the values to new ones before they
    * are returned
    * @param results
-   * @param mapper
+   * @param projection
    * @returns
    */
   static choose<TValue, TNewValue, TError>(
     results: Result<TValue, TError>[],
-    mapper?: FunctionOfTtoK<TValue, TNewValue>
+    projection?: FunctionOfTtoK<TValue, TNewValue>
   ): TValue[] | TNewValue[] {
-    if (typeof mapper === 'function') {
+    if (typeof projection === 'function') {
       const values: TNewValue[] = [];
 
       for (const r of results) {
@@ -136,7 +146,7 @@ export class Result<TValue = Unit, TError = string> {
 
         const original = r.getValueOrThrow();
 
-        values.push(mapper(original));
+        values.push(projection(original));
       }
 
       return values;
@@ -164,7 +174,7 @@ export class Result<TValue = Unit, TError = string> {
    * @param errorHandler
    */
   static try<TValue, TError = string>(
-    factory: FunctionOfT<TValue>,
+    factory: FunctionOfT<Some<TValue>>,
     errorHandler: FunctionOfTtoK<unknown, TError>
   ): Result<TValue, TError>;
   /**
@@ -187,13 +197,18 @@ export class Result<TValue = Unit, TError = string> {
    * @param errorHandler
    */
   static try<TValue = Unit, TError = string>(
-    actionOrFactory: FunctionOfT<TValue> | Action,
-    errorHandler: FunctionOfTtoK<unknown, TError>
+    actionOrFactory: FunctionOfT<Some<TValue>> | Action,
+    errorHandler: FunctionOfTtoK<unknown, Some<TError>>
   ): Result<TValue, TError> {
     try {
       const value = actionOrFactory();
 
-      return Result.success(value!);
+      return isDefined(value)
+        ? Result.success(value)
+        : (Result.success<Unit, TError>(Unit.Instance) as Result<
+            TValue,
+            TError
+          >);
     } catch (error: unknown) {
       return Result.failure(errorHandler(error));
     }
@@ -227,22 +242,22 @@ export class Result<TValue = Unit, TError = string> {
    * @throws {Error} if the provided initial state is invalid
    */
   protected constructor(state: {
-    value?: TValue;
-    error?: TError;
+    value: Some<TValue> | None;
+    error: Some<TError> | None;
     isSuccess: boolean;
   }) {
     const { value, error, isSuccess } = state;
 
-    if (isDefined(value) && !isSuccess) {
+    if (isSome(value) && !isSuccess) {
       throw new Error('Value cannot be defined for failed ResultAll');
-    } else if (isDefined(error) && isSuccess) {
+    } else if (isSome(error) && isSuccess) {
       throw new Error('Error cannot be defined for successful ResultAll');
-    } else if (!isDefined(value) && !isDefined(error)) {
+    } else if (!isSome(value) && !isSome(error)) {
       throw new Error('Value or Error must be defined');
     }
 
-    this.state.value = value;
-    this.state.error = error;
+    this.state.value = value ?? undefined;
+    this.state.error = error ?? undefined;
   }
 
   /**
@@ -250,7 +265,7 @@ export class Result<TValue = Unit, TError = string> {
    * @returns {TValue} the inner value if the result suceeded
    * @throws {Error} if the result failed
    */
-  getValueOrThrow(): TValue {
+  getValueOrThrow(): Some<TValue> {
     if (isDefined(this.state.value)) {
       return this.state.value;
     }
@@ -258,16 +273,16 @@ export class Result<TValue = Unit, TError = string> {
     throw Error('No value');
   }
 
-  getValueOrDefault(defaultValue: TValue): TValue;
-  getValueOrDefault(factory: FunctionOfT<TValue>): TValue;
+  getValueOrDefault(defaultValue: Some<TValue>): Some<TValue>;
+  getValueOrDefault(factory: FunctionOfT<Some<TValue>>): Some<TValue>;
   /**
    * Gets the Result's inner value
    * @param defaultOrValueFactory A value or value factory function
    * @returns {TValue} The Result's value or a default value if the Result failed
    */
   getValueOrDefault(
-    defaultOrValueFactory: TValue | FunctionOfT<TValue>
-  ): TValue {
+    defaultOrValueFactory: Some<TValue> | FunctionOfT<Some<TValue>>
+  ): Some<TValue> {
     if (this.isSuccess) {
       return this.getValueOrThrow();
     }
@@ -284,7 +299,7 @@ export class Result<TValue = Unit, TError = string> {
    * @returns {TError} the inner error if the operation failed
    * @throws {Error} if the result succeeded
    */
-  getErrorOrThrow(): TError {
+  getErrorOrThrow(): Some<TError> {
     if (isDefined(this.state.error)) {
       return this.state.error;
     }
@@ -297,9 +312,11 @@ export class Result<TValue = Unit, TError = string> {
    * @param defaultOrErrorFactory An error or error creator function
    * @returns {TError} The Result's error or a default error if the Result succeeded
    */
-  getErrorOrDefault(error: TError): TError;
-  getErrorOrDefault(errorFactory: FunctionOfT<TError>): TError;
-  getErrorOrDefault(errorOrErrorFactory: TError | FunctionOfT<TError>): TError {
+  getErrorOrDefault(error: Some<TError>): Some<TError>;
+  getErrorOrDefault(errorFactory: FunctionOfT<Some<TError>>): Some<TError>;
+  getErrorOrDefault(
+    errorOrErrorFactory: Some<TError> | FunctionOfT<Some<TError>>
+  ): Some<TError> {
     if (this.isFailure) {
       return this.getErrorOrThrow();
     }
@@ -318,7 +335,7 @@ export class Result<TValue = Unit, TError = string> {
    */
   ensure(
     predicate: PredicateOfT<TValue>,
-    error: TError
+    error: Some<TError>
   ): Result<TValue, TError>;
   /**
    *
@@ -327,7 +344,7 @@ export class Result<TValue = Unit, TError = string> {
    */
   ensure(
     predicate: PredicateOfT<TValue>,
-    errorFactory: FunctionOfTtoK<TValue, TError>
+    errorFactory: FunctionOfTtoK<TValue, Some<TError>>
   ): Result<TValue, TError>;
   /**
    * Checks the value of a given predicate against the Result's inner value,
@@ -338,7 +355,7 @@ export class Result<TValue = Unit, TError = string> {
    */
   ensure(
     predicate: PredicateOfT<TValue>,
-    errorOrErrorFactory: TError | FunctionOfTtoK<TValue, TError>
+    errorOrErrorFactory: Some<TError> | FunctionOfTtoK<TValue, Some<TError>>
   ): Result<TValue, TError> {
     if (this.isFailure) {
       return this;
@@ -357,42 +374,42 @@ export class Result<TValue = Unit, TError = string> {
 
   /**
    *
-   * @param mapper
+   * @param projection
    * @returns
    */
   check<TOtherValue>(
-    mapper: FunctionOfTtoK<TValue, Result<TOtherValue, TError>>
+    projection: FunctionOfTtoK<TValue, Result<TOtherValue, TError>>
   ): Result<TValue, TError> {
-    return this.bind(mapper).map((_) => this.getValueOrThrow()!);
+    return this.bind(projection).map((_) => this.getValueOrThrow());
   }
 
   /**
    *
    * @param condition
-   * @param mapper
+   * @param projection
    */
   checkIf<TOtherValue>(
     condition: boolean,
-    mapper: FunctionOfTtoK<TValue, Result<TOtherValue, TError>>
+    projection: FunctionOfTtoK<TValue, Result<TOtherValue, TError>>
   ): Result<TValue, TError>;
   /**
    *
    * @param predicate
-   * @param mapper
+   * @param projection
    */
   checkIf<TOtherValue>(
     predicate: PredicateOfT<TValue>,
-    mapper: FunctionOfTtoK<TValue, Result<TOtherValue, TError>>
+    projection: FunctionOfTtoK<TValue, Result<TOtherValue, TError>>
   ): Result<TValue, TError>;
   /**
    *
    * @param conditionOrPredicate
-   * @param mapper
+   * @param projection
    * @returns
    */
   checkIf<TOtherValue>(
     conditionOrPredicate: boolean | PredicateOfT<TValue>,
-    mapper: FunctionOfTtoK<TValue, Result<TOtherValue, TError>>
+    projection: FunctionOfTtoK<TValue, Result<TOtherValue, TError>>
   ): Result<TValue, TError> {
     if (this.isFailure) {
       return this;
@@ -402,82 +419,82 @@ export class Result<TValue = Unit, TError = string> {
       ? conditionOrPredicate(this.getValueOrThrow())
       : conditionOrPredicate;
 
-    return condition ? this.check(mapper) : this;
+    return condition ? this.check(projection) : this;
   }
 
   /**
    *
-   * @param mapper
+   * @param projection
    * @returns
    */
   map<TNewValue>(
-    mapper: FunctionOfTtoK<TValue, TNewValue>
+    projection: FunctionOfTtoK<TValue, Some<TNewValue>>
   ): Result<TNewValue, TError> {
     return this.isSuccess
-      ? Result.success(mapper(this.getValueOrThrow()))
+      ? Result.success(projection(this.getValueOrThrow()))
       : Result.failure(this.getErrorOrThrow());
   }
 
   /**
    *
-   * @param mapper
+   * @param projection
    * @returns
    */
   mapError<TNewError>(
-    mapper: FunctionOfTtoK<TError, TNewError>
+    projection: FunctionOfTtoK<TError, Some<TNewError>>
   ): Result<TValue, TNewError> {
     return this.isFailure
-      ? Result.failure(mapper(this.getErrorOrThrow()))
+      ? Result.failure(projection(this.getErrorOrThrow()))
       : Result.success(this.getValueOrThrow());
   }
 
   /**
    *
-   * @param mapper
+   * @param projection
    * @returns
    */
   mapAsync<TNewValue>(
-    mapper: FunctionOfTtoK<TValue, Promise<TNewValue>>
+    projection: FunctionOfTtoK<TValue, Promise<Some<TNewValue>>>
   ): ResultAsync<TNewValue, TError> {
     return this.isSuccess
-      ? ResultAsync.from(mapper(this.getValueOrThrow()))
+      ? ResultAsync.from(projection(this.getValueOrThrow()))
       : ResultAsync.failure(this.getErrorOrThrow());
   }
 
   /**
    *
-   * @param mapper
+   * @param projection
    * @returns
    */
   bind<TNewValue>(
-    mapper: FunctionOfTtoK<TValue, Result<TNewValue, TError>>
+    projection: FunctionOfTtoK<TValue, Result<TNewValue, TError>>
   ): Result<TNewValue, TError> {
     return this.isSuccess
-      ? mapper(this.getValueOrThrow())
+      ? projection(this.getValueOrThrow())
       : Result.failure(this.getErrorOrThrow());
   }
 
   /**
    *
-   * @param mapper
+   * @param projection
    */
   bindAsync<TNewValue>(
-    mapper: FunctionOfTtoK<TValue, Promise<Result<TNewValue, TError>>>
+    projection: FunctionOfTtoK<TValue, Promise<Result<TNewValue, TError>>>
   ): ResultAsync<TNewValue, TError>;
   /**
    *
-   * @param mapper
+   * @param projection
    */
   bindAsync<TNewValue>(
-    mapper: FunctionOfTtoK<TValue, ResultAsync<TNewValue, TError>>
+    projection: FunctionOfTtoK<TValue, ResultAsync<TNewValue, TError>>
   ): ResultAsync<TNewValue, TError>;
   /**
    *
-   * @param mapper
+   * @param projection
    * @returns
    */
   bindAsync<TNewValue>(
-    mapper:
+    projection:
       | FunctionOfTtoK<TValue, Promise<Result<TNewValue, TError>>>
       | FunctionOfTtoK<TValue, ResultAsync<TNewValue, TError>>
   ): ResultAsync<TNewValue, TError> {
@@ -485,7 +502,7 @@ export class Result<TValue = Unit, TError = string> {
       return ResultAsync.failure(this.getErrorOrThrow());
     }
 
-    const resultAsyncOrPromise = mapper(this.getValueOrThrow());
+    const resultAsyncOrPromise = projection(this.getValueOrThrow());
 
     return isPromise(resultAsyncOrPromise)
       ? ResultAsync.from<TNewValue, TError>(resultAsyncOrPromise)
@@ -570,14 +587,14 @@ export class Result<TValue = Unit, TError = string> {
    *
    * @param matcher
    */
-  match(matcher: ResultMatcherNoReturn<TValue, TError>): void;
+  match<TNewValue>(
+    matcher: ResultMatcher<TValue, TError, Some<TNewValue>>
+  ): TNewValue;
   /**
    *
    * @param matcher
    */
-  match<TNewValue>(
-    matcher: ResultMatcher<TValue, TError, TNewValue>
-  ): TNewValue;
+  match(matcher: ResultMatcherNoReturn<TValue, TError>): Unit;
   /**
    *
    * @param matcher
@@ -585,14 +602,19 @@ export class Result<TValue = Unit, TError = string> {
    */
   match<TNewValue>(
     matcher:
-      | ResultMatcher<TValue, TError, TNewValue>
+      | ResultMatcher<TValue, TError, Some<TNewValue>>
       | ResultMatcherNoReturn<TValue, TError>
-  ): TNewValue | void {
+  ): TNewValue | Unit {
     if (this.isSuccess) {
-      return matcher.success(this.getValueOrThrow());
+      const successValue = matcher.success(this.getValueOrThrow());
+
+      return isDefined(successValue) ? successValue : Unit.Instance;
     }
+
     if (this.isFailure) {
-      return matcher.failure(this.getErrorOrThrow());
+      const failureValue = matcher.failure(this.getErrorOrThrow());
+
+      return isDefined(failureValue) ? failureValue : Unit.Instance;
     }
 
     return never();
@@ -600,13 +622,13 @@ export class Result<TValue = Unit, TError = string> {
 
   /**
    *
-   * @param mapper
+   * @param projection
    * @returns
    */
   finally<TNewValue>(
-    mapper: FunctionOfTtoK<Result<TValue, TError>, TNewValue>
-  ): TNewValue {
-    return mapper(this);
+    projection: FunctionOfTtoK<Result<TValue, TError>, Some<TNewValue>>
+  ): Some<TNewValue> {
+    return projection(this);
   }
 
   /**
@@ -642,7 +664,7 @@ export class Result<TValue = Unit, TError = string> {
    */
   onSuccessTry(
     action: Action,
-    errorCreator: FunctionOfTtoK<unknown, TError>
+    errorCreator: FunctionOfTtoK<unknown, Some<TError>>
   ): Result<TValue, TError>;
   /**
    *
@@ -651,7 +673,7 @@ export class Result<TValue = Unit, TError = string> {
    */
   onSuccessTry(
     action: ActionOfT<TValue>,
-    errorCreator: FunctionOfTtoK<unknown, TError>
+    errorCreator: FunctionOfTtoK<unknown, Some<TError>>
   ): Result<TValue, TError>;
   /**
    *
@@ -661,7 +683,7 @@ export class Result<TValue = Unit, TError = string> {
    */
   onSuccessTry(
     action: Action | ActionOfT<TValue>,
-    errorCreator: FunctionOfTtoK<unknown, TError>
+    errorCreator: FunctionOfTtoK<unknown, Some<TError>>
   ): Result<TValue, TError> {
     if (this.isFailure) {
       return this;
@@ -688,15 +710,15 @@ export class Result<TValue = Unit, TError = string> {
     asyncAction:
       | FunctionOfT<Promise<void>>
       | FunctionOfTtoK<TValue, Promise<void>>,
-    errorHander: FunctionOfTtoK<unknown, TError>
+    errorHander: FunctionOfTtoK<unknown, Some<TError>>
   ): ResultAsync<TValue, TError> {
     if (this.isFailure) {
       return ResultAsync.failure(this.getErrorOrThrow());
     }
 
-    const value = this.getValueOrThrow();
-
     const result = async () => {
+      const value = this.getValueOrThrow();
+
       try {
         await asyncAction(value);
 
@@ -710,12 +732,18 @@ export class Result<TValue = Unit, TError = string> {
   }
 
   onSuccessTryMap<TNewValue>(
-    selector: FunctionOfT<TNewValue>,
-    errorHandler: FunctionOfTtoK<unknown, TError>
+    projection: FunctionOfTtoK<TValue, Some<TNewValue>>,
+    errorHandler: FunctionOfTtoK<unknown, Some<TError>>
   ): Result<TNewValue, TError>;
   onSuccessTryMap<TNewValue>(
-    selector: FunctionOfT<TNewValue> | FunctionOfTtoK<TValue, TNewValue>,
-    errorHandler: FunctionOfTtoK<unknown, TError>
+    projection: FunctionOfT<Some<TNewValue>>,
+    errorHandler: FunctionOfTtoK<unknown, Some<TError>>
+  ): Result<TNewValue, TError>;
+  onSuccessTryMap<TNewValue>(
+    selector:
+      | FunctionOfT<Some<TNewValue>>
+      | FunctionOfTtoK<TValue, Some<TNewValue>>,
+    errorHandler: FunctionOfTtoK<unknown, Some<TError>>
   ): Result<TNewValue, TError> {
     if (this.isFailure) {
       return Result.failure(this.getErrorOrThrow());
@@ -753,6 +781,6 @@ export class Result<TValue = Unit, TError = string> {
 }
 
 type ResultState<TValue, TError> = {
-  value?: TValue;
-  error?: TError;
+  value: Some<TValue> | undefined;
+  error: Some<TError> | undefined;
 };

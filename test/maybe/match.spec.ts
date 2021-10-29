@@ -1,4 +1,5 @@
 import { Maybe } from '@/src/maybe';
+import { Unit } from '@/src/unit';
 
 describe('Maybe', () => {
   describe('match', () => {
@@ -41,7 +42,7 @@ describe('Maybe', () => {
           },
         });
 
-        expect(result).toBeUndefined();
+        expect(result).toBe(Unit.Instance);
         expect(someCalled).toBe(true);
         expect(noneCalled).toBe(false);
       });
@@ -60,7 +61,7 @@ describe('Maybe', () => {
           },
         });
 
-        expect(result).toBeUndefined();
+        expect(result).toBe(Unit.Instance);
         expect(noneCalled).toBe(true);
         expect(someCalled).toBe(false);
       });

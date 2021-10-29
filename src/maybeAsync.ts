@@ -1,14 +1,17 @@
-import { AsyncActionOfT, isDefined } from '.';
 import { Maybe } from './maybe';
 import { ResultAsync } from './resultAsync';
+import { Unit } from './unit';
 import {
   ActionOfT,
+  AsyncActionOfT,
   FunctionOfT,
   FunctionOfTtoK,
+  isDefined,
   isFunction,
   isPromise,
   MaybeMatcher,
   MaybeMatcherNoReturn,
+  Some,
 } from './utilities';
 
 /**
@@ -21,11 +24,11 @@ export class MaybeAsync<TValue> {
    * @returns MaybeAsync
    */
   static from<TValue>(maybe: Maybe<TValue>): MaybeAsync<TValue>;
-  static from<TValue>(promise: Promise<TValue>): MaybeAsync<TValue>;
+  static from<TValue>(promise: Promise<Some<TValue>>): MaybeAsync<TValue>;
   static from<TValue>(maybePromise: Promise<Maybe<TValue>>): MaybeAsync<TValue>;
   static from<TValue>(
     valueOrPromiseOrMaybePromise:
-      | Promise<TValue | Maybe<TValue>>
+      | Promise<Some<TValue> | Maybe<TValue>>
       | Maybe<TValue>
   ): MaybeAsync<TValue> {
     if (isPromise(valueOrPromiseOrMaybePromise)) {
@@ -46,7 +49,7 @@ export class MaybeAsync<TValue> {
    * @param value
    * @returns
    */
-  static some<TValue>(value: TValue): MaybeAsync<TValue> {
+  static some<TValue>(value: Some<TValue>): MaybeAsync<TValue> {
     return new MaybeAsync(Promise.resolve(Maybe.some(value)));
   }
 
@@ -73,15 +76,15 @@ export class MaybeAsync<TValue> {
   }
 
   map<TNewValue>(
-    mapper: FunctionOfTtoK<TValue, TNewValue>
+    projection: FunctionOfTtoK<TValue, Some<TNewValue>>
   ): MaybeAsync<TNewValue>;
   map<TNewValue>(
-    mapper: FunctionOfTtoK<TValue, Promise<TNewValue>>
+    projection: FunctionOfTtoK<TValue, Promise<Some<TNewValue>>>
   ): MaybeAsync<TNewValue>;
   map<TNewValue>(
-    mapper:
-      | FunctionOfTtoK<TValue, TNewValue>
-      | FunctionOfTtoK<TValue, Promise<TNewValue>>
+    projection:
+      | FunctionOfTtoK<TValue, Some<TNewValue>>
+      | FunctionOfTtoK<TValue, Promise<Some<TNewValue>>>
   ): MaybeAsync<TNewValue> {
     return new MaybeAsync(
       this.value.then(async (m) => {
@@ -89,7 +92,7 @@ export class MaybeAsync<TValue> {
           return Maybe.none<TNewValue>();
         }
 
-        const result = mapper(m.getValueOrThrow());
+        const result = projection(m.getValueOrThrow());
 
         if (isPromise(result)) {
           return result.then((r) => Maybe.some(r));
@@ -121,13 +124,13 @@ export class MaybeAsync<TValue> {
   }
 
   bind<TNewValue>(
-    mapper: FunctionOfTtoK<TValue, Maybe<TNewValue>>
+    projection: FunctionOfTtoK<TValue, Maybe<TNewValue>>
   ): MaybeAsync<TNewValue>;
   bind<TNewValue>(
-    mapper: FunctionOfTtoK<TValue, MaybeAsync<TNewValue>>
+    projection: FunctionOfTtoK<TValue, MaybeAsync<TNewValue>>
   ): MaybeAsync<TNewValue>;
   bind<TNewValue>(
-    mapper:
+    projection:
       | FunctionOfTtoK<TValue, Maybe<TNewValue>>
       | FunctionOfTtoK<TValue, MaybeAsync<TNewValue>>
   ): MaybeAsync<TNewValue> {
@@ -137,7 +140,7 @@ export class MaybeAsync<TValue> {
           return Maybe.none<TNewValue>();
         }
 
-        const result = mapper(m.getValueOrThrow());
+        const result = projection(m.getValueOrThrow());
 
         if (result instanceof Maybe) {
           return result;
@@ -149,27 +152,35 @@ export class MaybeAsync<TValue> {
   }
 
   match<TNewValue>(
+    matcher: MaybeMatcher<TValue, TNewValue>
+  ): Promise<TNewValue>;
+  match(matcher: MaybeMatcherNoReturn<TValue>): Promise<Unit>;
+  match<TNewValue>(
     matcher: MaybeMatcher<TValue, TNewValue> | MaybeMatcherNoReturn<TValue>
-  ): Promise<TNewValue | void> {
+  ): Promise<TNewValue | Unit> {
     return this.value.then((m) => m.match(matcher));
   }
 
-  execute(func: ActionOfT<TValue>): Promise<void>;
-  execute(func: AsyncActionOfT<TValue>): Promise<void>;
-  execute(func: ActionOfT<TValue> | AsyncActionOfT<TValue>): Promise<void> {
+  execute(func: ActionOfT<TValue>): Promise<Unit>;
+  execute(func: AsyncActionOfT<TValue>): Promise<Unit>;
+  execute(func: ActionOfT<TValue> | AsyncActionOfT<TValue>): Promise<Unit> {
     return this.value.then((m) => {
       if (m.hasNoValue) {
-        return;
+        return Unit.Instance;
       }
 
-      return func(m.getValueOrThrow());
+      const result = func(m.getValueOrThrow());
+
+      return isPromise(result)
+        ? result.then(() => Unit.Instance)
+        : Unit.Instance;
     });
   }
 
   or(
     fallback:
-      | TValue
-      | FunctionOfT<TValue>
+      | Some<TValue>
+      | FunctionOfT<Some<TValue>>
       | Maybe<TValue>
       | FunctionOfT<Maybe<TValue>>
       | MaybeAsync<TValue>
@@ -208,7 +219,7 @@ export class MaybeAsync<TValue> {
     );
   }
 
-  toResult(error: string): ResultAsync {
+  toResult(error: string): ResultAsync<Unit, string> {
     return ResultAsync.from(this.value.then((m) => m.toResult(error)));
   }
 
