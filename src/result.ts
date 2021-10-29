@@ -1,4 +1,4 @@
-import { Predicate } from '.';
+import { AsyncActionOfT, isPromise, Predicate } from '.';
 import { ResultAsync } from './resultAsync';
 import { Unit } from './unit';
 import {
@@ -460,14 +460,36 @@ export class Result<TValue = Unit, TError = string> {
   /**
    *
    * @param mapper
-   * @returns
+   */
+  bindAsync<TNewValue>(
+    mapper: FunctionOfTtoK<TValue, Promise<Result<TNewValue, TError>>>
+  ): ResultAsync<TNewValue, TError>;
+  /**
+   *
+   * @param mapper
    */
   bindAsync<TNewValue>(
     mapper: FunctionOfTtoK<TValue, ResultAsync<TNewValue, TError>>
+  ): ResultAsync<TNewValue, TError>;
+  /**
+   *
+   * @param mapper
+   * @returns
+   */
+  bindAsync<TNewValue>(
+    mapper:
+      | FunctionOfTtoK<TValue, Promise<Result<TNewValue, TError>>>
+      | FunctionOfTtoK<TValue, ResultAsync<TNewValue, TError>>
   ): ResultAsync<TNewValue, TError> {
-    return this.isSuccess
-      ? mapper(this.getValueOrThrow())
-      : ResultAsync.failure(this.getErrorOrThrow());
+    if (this.isFailure) {
+      return ResultAsync.failure(this.getErrorOrThrow());
+    }
+
+    const resultAsyncOrPromise = mapper(this.getValueOrThrow());
+
+    return isPromise(resultAsyncOrPromise)
+      ? ResultAsync.from<TNewValue, TError>(resultAsyncOrPromise)
+      : resultAsyncOrPromise;
   }
 
   /**
@@ -481,6 +503,27 @@ export class Result<TValue = Unit, TError = string> {
     }
 
     return this;
+  }
+
+  tapAsync<TOtherValue>(
+    action: FunctionOfTtoK<TValue, ResultAsync<TOtherValue, TError>>
+  ): ResultAsync<TValue, TError>;
+  tapAsync(action: AsyncActionOfT<TValue>): ResultAsync<TValue, TError>;
+  tapAsync<TOtherValue>(
+    action:
+      | FunctionOfTtoK<TValue, ResultAsync<TOtherValue, TError>>
+      | AsyncActionOfT<TValue>
+  ): ResultAsync<TValue, TError> {
+    if (this.isFailure) {
+      return ResultAsync.failure(this.getErrorOrThrow());
+    }
+
+    const value = this.getValueOrThrow();
+    const result = action(value);
+
+    return isPromise(result)
+      ? ResultAsync.from(result.then(() => value))
+      : ResultAsync.from(result.toPromise().then(() => value));
   }
 
   /**

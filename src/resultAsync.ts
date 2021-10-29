@@ -367,22 +367,34 @@ export class ResultAsync<TValue = Unit, TError = string> {
   tap(
     asyncAction: FunctionOfTtoK<TValue, Promise<void>>
   ): ResultAsync<TValue, TError>;
-  tap(
-    action: ActionOfT<TValue> | FunctionOfTtoK<TValue, Promise<void>>
+  tap<TOtherValue>(
+    asyncAction: FunctionOfTtoK<TValue, ResultAsync<TOtherValue, TError>>
+  ): ResultAsync<TValue, TError>;
+  tap<TOtherValue>(
+    action:
+      | ActionOfT<TValue>
+      | FunctionOfTtoK<TValue, Promise<void>>
+      | FunctionOfTtoK<TValue, ResultAsync<TOtherValue, TError>>
   ): ResultAsync<TValue, TError> {
     return new ResultAsync(
-      this.value.then(async (r) => {
-        if (r.isFailure) {
-          return r;
+      this.value.then(async (originalResult) => {
+        if (originalResult.isFailure) {
+          return originalResult;
         }
 
-        const voidOrPromise = action(r.getValueOrThrow());
+        const voidOrPromise = action(originalResult.getValueOrThrow());
 
         if (isPromise(voidOrPromise)) {
           await voidOrPromise;
+        } else if (voidOrPromise instanceof ResultAsync) {
+          const result = await voidOrPromise.toPromise();
+
+          if (result.isFailure) {
+            throw new Error(`${result.getErrorOrThrow()}`);
+          }
         }
 
-        return r;
+        return originalResult;
       })
     );
   }
