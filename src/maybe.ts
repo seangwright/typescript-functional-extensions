@@ -1,4 +1,4 @@
-import { isSome } from '.';
+import { AsyncActionOfT, isSome } from '.';
 import { MaybeAsync } from './maybeAsync';
 import { Result } from './result';
 import { Unit } from './unit';
@@ -312,6 +312,19 @@ export class Maybe<TValue> {
     }
 
     return Unit.Instance;
+  }
+
+  /**
+   * Executes the given async action if the Maybe has a value
+   * @param action A void Promise returning function
+   * @returns A Promise containing Unit
+   */
+  executeAsync(action: AsyncActionOfT<TValue>): Promise<Unit> {
+    if (this.hasValue) {
+      return action(this.getValueOrThrow()).then(() => Unit.Instance);
+    }
+
+    return Promise.resolve(Unit.Instance);
   }
 
   /**
