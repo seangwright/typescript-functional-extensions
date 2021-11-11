@@ -76,6 +76,42 @@ export class Maybe<TValue> {
   }
 
   /**
+   * Returns a Maybe containing the last value of the array,
+   * and a Maybe.none if the array is empty
+   * @param values
+   */
+  static tryLast<TValue>(values: TValue[]): Maybe<TValue>;
+  /**
+   * Returns a Maybe containing the value of the last element
+   * of the array matching the condition of the predicate, and
+   * a Maybe.none if there are no matches
+   * @param values
+   * @param predicate
+   */
+  static tryLast<TValue>(
+    values: Some<TValue>[],
+    predicate: PredicateOfT<Some<TValue>>
+  ): Maybe<TValue>;
+  static tryLast<TValue>(
+    values: Some<TValue>[],
+    predicate?: PredicateOfT<Some<TValue>>
+  ): Maybe<TValue> {
+    if (isFunction(predicate)) {
+      for (let index = values.length - 1; index >= 0; index--) {
+        const value = values[index];
+
+        if (predicate(value)) {
+          return new Maybe(value);
+        }
+      }
+
+      return Maybe.none();
+    } else {
+      return new Maybe(values[values.length - 1]);
+    }
+  }
+
+  /**
    * Returns only the Maybe instances of the array that have
    * values
    * @param maybes
