@@ -219,8 +219,10 @@ export class MaybeAsync<TValue> {
     );
   }
 
-  toResult(error: string): ResultAsync<Unit, string> {
-    return ResultAsync.from(this.value.then((m) => m.toResult(error)));
+  toResult<TError>(error: Some<TError>): ResultAsync<TValue, TError> {
+    return ResultAsync.from<TValue, TError>(
+      this.value.then((m) => m.toResult(error))
+    );
   }
 
   /**
