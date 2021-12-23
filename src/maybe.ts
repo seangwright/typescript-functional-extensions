@@ -43,7 +43,7 @@ export class Maybe<TValue> {
    * @param value The value of the new Maybe.
    * @returns {Maybe}
    */
-  static from<TValue>(value: Some<TValue>): Maybe<TValue> {
+  static from<TValue>(value: Some<TValue> | None): Maybe<TValue> {
     return new Maybe(value);
   }
 
@@ -412,11 +412,20 @@ export class Maybe<TValue> {
 
   /**
    * Returns the Maybe, wrapped in a MaybeAsync, if it has a value, otherwise
-   * returns the fallbackMaybeAsync
+   * returns the fallback MaybeAsync
    * @param fallbackPromise
    * @returns
    */
   orAsync(fallbackMaybeAsync: MaybeAsync<TValue>): MaybeAsync<TValue>;
+  /**
+   * Returns the Maybe, wrapped in a MaybeAsync, if it has a value, otherwise
+   * returns executes the fallbackPromiseFactory and returns its value wrapped in a MaybeAsync
+   * @param fallbackPromise
+   * @returns
+   */
+  orAsync(
+    fallbackPromiseFactory: FunctionOfT<Promise<Some<TValue>>>
+  ): MaybeAsync<TValue>;
   /**
    * Returns the Maybe, wrapped in a MaybeAsync, if it has a value, otherwise
    * returns the fallbackPromise, wrapped in a MaybeAsync
@@ -424,7 +433,10 @@ export class Maybe<TValue> {
    */
   orAsync(fallbackPromise: Promise<Some<TValue>>): MaybeAsync<TValue>;
   orAsync(
-    fallback: MaybeAsync<TValue> | Promise<Some<TValue>>
+    fallback:
+      | MaybeAsync<TValue>
+      | Promise<Some<TValue>>
+      | FunctionOfT<Promise<Some<TValue>>>
   ): MaybeAsync<TValue> {
     if (this.hasValue) {
       return MaybeAsync.some(this.getValueOrThrow());
@@ -432,6 +444,10 @@ export class Maybe<TValue> {
 
     if (isPromise(fallback)) {
       return MaybeAsync.from(fallback);
+    }
+
+    if (isFunction(fallback)) {
+      return MaybeAsync.from(fallback());
     }
 
     return fallback;

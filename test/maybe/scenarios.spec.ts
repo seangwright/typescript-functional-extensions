@@ -5,7 +5,10 @@ describe('Maybe', () => {
     test('nothing is done when there is no value', async () => {
       let functionCalls = 0;
 
-      await Maybe.tryFirst(getUsers(), (u) => u.hasConfirmedAccount)
+      const user = await Maybe.tryFirst(
+        getUsers(),
+        (u) => u.hasConfirmedAccount
+      )
         .tapAsync(sendPromotionalEmail)
         .bind(({ referralAccount }) => referralAccount)
         .tap(sendPromotionalEmail)
@@ -17,6 +20,7 @@ describe('Maybe', () => {
       }
 
       expect(functionCalls).toBe(0);
+      expect(user).toHaveNoValue();
     });
   });
 });

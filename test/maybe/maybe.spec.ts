@@ -23,17 +23,21 @@ describe('Maybe', () => {
     });
 
     test('creates a Maybe with no value when supplied null', () => {
-      // @ts-ignore
-      const value: string = null;
+      const value: string | null = null;
       const sut = Maybe.from<string>(value);
 
       expect(sut).toHaveNoValue();
     });
 
     test('creates a Maybe with no value when supplied undefined', () => {
-      // @ts-ignore
-      const value: string = undefined;
+      const value: string | undefined = undefined;
       const sut = Maybe.from<string>(value);
+
+      expect(sut).toHaveNoValue();
+    });
+
+    test('creates a Maybe with no value when supplied no value', () => {
+      const sut = Maybe.from<string>();
 
       expect(sut).toHaveNoValue();
     });
