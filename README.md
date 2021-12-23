@@ -13,11 +13,13 @@ A TypeScript implementation of <https://github.com/vkhorikov/CSharpFunctionalExt
 
 ## Monads
 
-Below are the monads included in this package and examples of their use.
+Below are the monads included in this package and examples of their use (more examples of all monads and their methods can be found in the library unit tests).
 
 ### Maybe
 
 `Maybe` represents a value that might or might not exist.
+
+#### Some/None/From
 
 ```typescript
 const maybe = Maybe.some('apple');
@@ -32,9 +34,106 @@ console.log(maybe.getValueOrThrow()); // 'apple'
 const maybe = Maybe.none();
 
 console.log(maybe.hasValue); // false
-console.log(maybe.hasNoValue); // false
+console.log(maybe.hasNoValue); // true
 console.log(maybe.getValueOrDefault('banana')); // 'banana'
 console.log(maybe.getValueOrThrow()); // throws Error 'No value'
+```
+
+```typescript
+const maybe = Maybe.from(undefined);
+
+console.log(maybe.hasValue); // false
+console.log(maybe.hasNoValue); // true
+console.log(maybe.getValueOrDefault('banana')); // 'banana'
+console.log(maybe.getValueOrThrow()); // throws Error 'No value'
+```
+
+#### TryFirst
+
+```typescript
+const maybe = Maybe.tryFirst(['apple', 'banana']);
+
+console.log(maybe.getValueOrThrow()); // 'apple'
+```
+
+```typescript
+const maybe = Maybe.tryFirst(['apple', 'banana'], (fruit) => fruit.length > 6);
+
+console.log(maybe.getValueOrThrow()); // throws Error 'No value'
+```
+
+#### TryLast
+
+```typescript
+const maybe = Maybe.tryLast(
+  ['apple', 'banana', 'mango'],
+  (fruit) => fruit.length === 5
+);
+
+console.log(maybe.getValueOrThrow()); // 'mango'
+```
+
+```typescript
+const maybe = Maybe.tryLast(
+  ['apple', 'banana', 'mango'],
+  (fruit) => fruit === 'pear'
+);
+
+console.log(maybe.getValueOrThrow()); // throws Error 'No value'
+```
+
+#### Map
+
+```typescript
+const maybe = Maybe.some({ type: 'fruit', name: 'apple' })
+  .map(({ type }) => ({ type, name: 'banana' }))
+  .map((food) => food.name)
+  .map((name) => name.length);
+
+console.log(maybe.getValueOrThrow()); // 6
+```
+
+```typescript
+type Food = {
+  type: string;
+  name: string;
+};
+
+const maybe = Maybe.none<Food>()
+  .map(({ type }) => ({ type, name: 'banana' }))
+  .map((food) => food.name)
+  .map((name) => name.length);
+
+console.log(maybe.getValueOrThrow()); // throws Error 'No value'
+```
+
+#### Match
+
+```typescript
+const maybe = Maybe.some({ type: 'fruit', name: 'apple' })
+  .map(({ type }) => ({ type, name: 'banana' }))
+  .map((food) => food.name)
+  .map((name) => name.length)
+  .match({
+    some: (number) => console.log(number),
+    none: () => console.log('None!'),
+  }); // 6
+```
+
+```typescript
+type Food = {
+  type: string;
+  name: string;
+};
+
+const maybe = Maybe.none<Food>()
+  .map(({ type }) => ({ type, name: 'banana' }))
+  .map((food) => food.name)
+  .map((name) => name.length)
+  .match({
+    some: (number) => console.log(number),
+    none: () => console.log('None!'),
+  }); // None!
 ```
 
 ### MaybeAsync
