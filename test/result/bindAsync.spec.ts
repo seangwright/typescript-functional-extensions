@@ -29,6 +29,19 @@ describe('Result', () => {
         expect(result).toFailWith(error);
         expect(wasCalled).toBe(false);
       });
+
+      test('will call the projection function when the original Result succeeds and convert a rejected Promise to a failed Result', async () => {
+        const sut = Result.success(1);
+
+        const result = await sut
+          .bindAsync(
+            (_number) => Promise.reject('reject'),
+            (e) => (typeof e === 'string' ? e : 'caught')
+          )
+          .toPromise();
+
+        expect(result).toFailWith('reject');
+      });
     });
 
     describe('ResultAsync', () => {

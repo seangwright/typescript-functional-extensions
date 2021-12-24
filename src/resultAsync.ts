@@ -1,3 +1,4 @@
+import { ErrorHandler } from '.';
 import { Result } from './result';
 import { Unit } from './unit';
 import {
@@ -29,28 +30,42 @@ export class ResultAsync<TValue = Unit, TError = string> {
   ): ResultAsync<TValue, TError>;
   /**
    * Creates a new ResultAsync from the given Promise
-   * @param value a Promise returning a value which will be wrapped in a successful Result
+   * @param value a Promise resolving to a Result
+   * @param errorHandler
    */
   static from<TValue, TError>(
-    value: Promise<Some<TValue>>
+    value: Promise<Result<TValue, TError>>,
+    errorHandler?: ErrorHandler<TError>
   ): ResultAsync<TValue, TError>;
   /**
    * Creates a new ResultAsync from the given Promise
-   * @param value a Promise returning a Result, if it resolves
+   * @param value a Promise which will be converted into a successful Result if it resolves
+   * and a failed Result if it rejects
    */
   static from<TValue, TError>(
-    value: Promise<Result<TValue, TError>>
+    value: Promise<Some<TValue>>,
+    errorHandler?: ErrorHandler<TError>
   ): ResultAsync<TValue, TError>;
+
   static from<TValue, TError>(
     value:
-      | Promise<Some<TValue>>
-      | Promise<Result<TValue, TError>>
       | Result<TValue, TError>
+      | Promise<Result<TValue, TError>>
+      | Promise<Some<TValue>>,
+    errorHandler?: ErrorHandler<TError>
   ): ResultAsync<TValue, TError> {
     if (isPromise(value)) {
-      return new ResultAsync(
-        value.then((v) => (v instanceof Result ? v : Result.success(v)))
+      let promise = value.then((v) =>
+        v instanceof Result ? v : Result.success<TValue, TError>(v)
       );
+
+      if (isFunction(errorHandler)) {
+        promise = promise.catch((error) =>
+          Result.failure<TValue, TError>(errorHandler(error))
+        );
+      }
+
+      return new ResultAsync(promise);
     } else if (value instanceof Result) {
       return new ResultAsync(Promise.resolve(value));
     }
@@ -165,7 +180,7 @@ export class ResultAsync<TValue = Unit, TError = string> {
   private value: Promise<Result<TValue, TError>>;
 
   protected constructor(value: Promise<Result<TValue, TError>>) {
-    this.value = value.catch((error) => Result.failure(error));
+    this.value = value;
   }
 
   /**

@@ -11,6 +11,8 @@ export type Some<T> = T extends None ? never : T;
 export type None = null | undefined | void;
 export type Known<TValue> = Exclude<unknown, TValue>;
 
+export type ErrorHandler<TError> = FunctionOfTtoK<unknown, Some<TError>>;
+
 export const never: ActionNever = () => {
   throw Error('This error should be unreachable');
 };
