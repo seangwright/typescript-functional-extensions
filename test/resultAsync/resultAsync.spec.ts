@@ -1,112 +1,121 @@
-import { Result } from '@/src/result';
 import { ResultAsync } from '@/src/resultAsync';
+import { Unit } from '@/src/unit';
 
 describe('ResultAsync', () => {
-  describe('from', () => {
-    describe('Result', () => {
-      test('constructs a successful ResultAsync from a sucessful Result', async () => {
-        const value = 1;
+  describe('success', () => {
+    test('success creates a successful Unit Result from no value', async () => {
+      const sut = ResultAsync.success();
 
-        const sut = ResultAsync.from(Result.success(value));
+      const result = await sut.toPromise();
 
-        const result = await sut.toPromise();
+      expect(result.isSuccess).toBe(true);
 
-        expect(result).toSucceedWith(value);
-      });
-
-      test('constructs a failed ResultAsync from a failed Result', async () => {
-        const error = 'error';
-
-        const sut = ResultAsync.from(Result.failure(error));
-
-        const result = await sut.toPromise();
-
-        expect(result).toFailWith(error);
-      });
+      expect(result).toSucceedWith(Unit.Instance);
     });
 
-    describe('Promise Result', () => {
-      test("constructs a successful ResultAsync from a resolved Promise's Result value", async () => {
-        const number = 1;
+    test('success creates a successful Result from a value', async () => {
+      const sut = ResultAsync.success(1);
 
-        const sut = ResultAsync.from(
-          Promise.resolve(Result.success(number)),
-          (e) => 'caught'
-        );
+      const result = await sut.toPromise();
 
-        const result = await sut.toPromise();
-
-        expect(result).toSucceedWith(number);
-      });
-
-      test("constructs a failed ResultAsync from a resolved Promise's failed Result value", async () => {
-        const error = 'error';
-        const sut = ResultAsync.from(
-          Promise.resolve(Result.failure<number>(error)),
-          (e) => 'caught'
-        );
-
-        const innerResult = await sut.toPromise();
-
-        expect(innerResult).toFailWith(error);
-      });
-
-      test("constructs a failed ResultAsync from a rejected Promise's error", async () => {
-        const error = 'caught';
-        const sut = ResultAsync.from(
-          Promise.reject<Result<number, string>>('error'),
-          (e) => error
-        );
-
-        const innerResult = await sut.toPromise();
-
-        expect(innerResult).toFailWith(error);
-      });
-    });
-
-    describe('Promise', () => {
-      test("constructs a successful ResultAsync from a resolved Promise's value", async () => {
-        const number = 1;
-
-        const sut = ResultAsync.from(Promise.resolve(number), (e) => 'caught');
-
-        const result = await sut.toPromise();
-
-        expect(result).toSucceedWith(number);
-      });
-
-      test("constructs a failed ResultAsync from a rejected Promise's error", async () => {
-        const error = 'caught';
-        const sut = ResultAsync.from<number, string>(
-          Promise.reject<number>('error'),
-          (e) => error
-        );
-
-        const innerResult = await sut.toPromise();
-
-        expect(innerResult).toFailWith(error);
-      });
+      expect(result).toSucceedWith(1);
     });
   });
 
-  test('success creates a successful Result', async () => {
-    const sut = ResultAsync.success(1);
+  describe('failure', () => {
+    test('failure creates a failed Result', async () => {
+      const error = { message: 'A problem' };
+      const sut = ResultAsync.failure(error);
 
-    const result = await sut.toPromise();
+      const result = await sut.toPromise();
 
-    expect(result.isSuccess).toBe(true);
-
-    expect(result.getValueOrThrow()).toBe(1);
+      expect(result).toFailWith(error);
+    });
   });
 
-  test('failure creates a failed Result', async () => {
-    const error = { message: 'A problem' };
-    const sut = ResultAsync.failure(error);
+  describe('isSuccess/isFailure', () => {
+    test('isSuccess returns true and isFailure returns false for a successful Result', async () => {
+      const sut = ResultAsync.success();
 
-    const result = await sut.toPromise();
+      await expect(sut.isSuccess).resolves.toBe(true);
+      await expect(sut.isFailure).resolves.toBe(false);
+    });
 
-    expect(result.isFailure).toBe(true);
+    test('isSuccess returns false and isFailure returns true for a failed Result', async () => {
+      const sut = ResultAsync.failure('ouch');
 
-    expect(result.getErrorOrThrow()).toBe(error);
+      await expect(sut.isSuccess).resolves.toBe(false);
+      await expect(sut.isFailure).resolves.toBe(true);
+    });
+  });
+
+  describe('getValueOrThrow', () => {
+    test('will return the inner value for a successful Result', async () => {
+      const sut = ResultAsync.success();
+
+      await expect(sut.getValueOrThrow()).resolves.toBe(Unit.Instance);
+    });
+
+    test('will throw an error for a failed Result', async () => {
+      const sut = ResultAsync.failure('error');
+
+      await expect(sut.getValueOrThrow()).rejects.toThrow();
+    });
+  });
+
+  describe('getValueOrDefault', () => {
+    test('will return the inner value for a successful Result', async () => {
+      const sut = ResultAsync.success(1);
+
+      await expect(sut.getValueOrDefault(2)).resolves.toBe(1);
+    });
+
+    test('will return the default value for a failed Result', async () => {
+      const sut = ResultAsync.failure<number>('error');
+
+      await expect(sut.getValueOrDefault(2)).resolves.toBe(2);
+    });
+
+    test('will return the default value factory value for a failed Result', async () => {
+      const sut = ResultAsync.failure<number>('error');
+
+      await expect(sut.getValueOrDefault(() => 2)).resolves.toBe(2);
+    });
+  });
+
+  describe('getErrorOrThrow', () => {
+    test('will return the inner error for a failed Result', async () => {
+      const sut = ResultAsync.failure<number>('error');
+
+      await expect(sut.getErrorOrThrow()).resolves.toBe('error');
+    });
+
+    test('will throw for a successful Result', async () => {
+      const sut = ResultAsync.success(1);
+
+      await expect(sut.getErrorOrThrow()).rejects.toThrow();
+    });
+  });
+
+  describe('getErrorOrDefault', () => {
+    test('will return the inner error for a failed Result', async () => {
+      const sut = ResultAsync.failure<number>('error');
+
+      await expect(sut.getErrorOrDefault('default')).resolves.toBe('error');
+    });
+
+    test('will throw for a successful Result', async () => {
+      const sut = ResultAsync.success(1);
+
+      await expect(sut.getErrorOrDefault('default')).resolves.toBe('default');
+    });
+
+    test('will return the default value factory value for a successful Result', async () => {
+      const sut = ResultAsync.success(1);
+
+      await expect(sut.getErrorOrDefault(() => 'default')).resolves.toBe(
+        'default'
+      );
+    });
   });
 });

@@ -27,20 +27,5 @@ describe('Result', () => {
       expect(result).toFailWith(error);
       expect(wasCalled).toBe(false);
     });
-
-    test('will execute the mapping with a failed Result and convert a rejected Promise to a failed Result', async () => {
-      const sut = Result.success(1);
-
-      const result = await sut
-        .mapAsync(
-          (_num) => {
-            return Promise.reject('reject');
-          },
-          (e) => (typeof e === 'string' ? e : 'caught')
-        )
-        .toPromise();
-
-      expect(result).toFailWith('reject');
-    });
   });
 });

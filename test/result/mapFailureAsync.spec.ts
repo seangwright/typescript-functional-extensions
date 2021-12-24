@@ -28,25 +28,5 @@ describe('Result', () => {
       expect(innerResult).toSucceedWith(2);
       expect(wasCalled).toBe(true);
     });
-
-    test('will execute the projection with a failed Result and convert a rejected Promise to a failed Result', async () => {
-      const error = 'error';
-      let wasCalled = false;
-      const sut = Result.failure<number>(error);
-
-      const innerResult = await sut
-        .mapFailureAsync(
-          (_error) => {
-            wasCalled = true;
-
-            return Promise.reject('reject');
-          },
-          (e) => (typeof e === 'string' ? e : 'caught')
-        )
-        .toPromise();
-
-      expect(innerResult).toFailWith('reject');
-      expect(wasCalled).toBe(true);
-    });
   });
 });

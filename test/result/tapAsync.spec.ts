@@ -17,21 +17,6 @@ describe('Result', () => {
         expect(wasCalled).toBe(true);
       });
 
-      test('will return a failed Result if the Result is successful and the asyncAction rejects', async () => {
-        const sut = Result.success(1);
-        const error = 'error';
-
-        const asyncAction = () => {
-          return Promise.reject(error);
-        };
-
-        const innerResult = await sut
-          .tapAsync(asyncAction, (e) => (typeof e === 'string' ? e : 'caught'))
-          .toPromise();
-
-        expect(innerResult).toFailWith(error);
-      });
-
       test('will not execute the asynchronous action if the Result is a failure', async () => {
         let wasCalled = false;
         const sut = Result.failure<number>('error');
