@@ -463,10 +463,6 @@ export class ResultAsync<TValue = Unit, TError = string> {
     );
   }
 
-  convertFailure<TNewValue>(): ResultAsync<TNewValue, TError> {
-    return new ResultAsync(this.value.then((r) => r.convertFailure()));
-  }
-
   onSuccessTry(
     action: Action,
     errorHandler: FunctionOfTtoK<unknown, Some<TError>>

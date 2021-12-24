@@ -1,4 +1,5 @@
 import { Result } from '@/src/result';
+
 describe('Result', () => {
   describe('check', () => {
     test('returns the current value for a successful Result and a successful check', () => {

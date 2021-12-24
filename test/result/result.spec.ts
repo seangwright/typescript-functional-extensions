@@ -219,5 +219,19 @@ describe('Result', () => {
         expect(sut.getErrorOrDefault(() => defaultValue)).toBe(defaultValue);
       });
     });
+
+    describe('toString', () => {
+      test('returns success for a successful Result', () => {
+        const sut = Result.success(1);
+
+        expect(sut.toString()).toBe('Result.success');
+      });
+
+      test('returns failre for a failed Result', () => {
+        const sut = Result.failure<number>('error');
+
+        expect(sut.toString()).toBe('Result.failure');
+      });
+    });
   });
 });

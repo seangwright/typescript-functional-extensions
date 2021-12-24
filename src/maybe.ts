@@ -1,4 +1,4 @@
-import { AsyncActionOfT, isSome } from '.';
+import { Action, AsyncActionOfT, isSome } from '.';
 import { MaybeAsync } from './maybeAsync';
 import { Result } from './result';
 import { Unit } from './unit';
@@ -282,6 +282,30 @@ export class Maybe<TValue> {
     });
 
     return MaybeAsync.from(promise);
+  }
+
+  /**
+   * Executes an action if the Maybe has no value
+   * @param action
+   */
+  tapNone(action: Action): Maybe<TValue> {
+    if (this.hasNoValue) {
+      action();
+    }
+
+    return this;
+  }
+
+  /**
+   * Executes an action if the Maybe has no value
+   * @param action
+   */
+  tapNoneAsync(action: Action): MaybeAsync<TValue> {
+    if (this.hasNoValue) {
+      action();
+    }
+
+    return MaybeAsync.from(this);
   }
 
   /**

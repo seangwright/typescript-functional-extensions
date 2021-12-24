@@ -273,7 +273,15 @@ export class Result<TValue = Unit, TError = string> {
     throw Error('No value');
   }
 
+  /**
+   * Returns the Result's value if it is successful and the default otherwise
+   * @param defaultValue a value to return if the Result is failed
+   */
   getValueOrDefault(defaultValue: Some<TValue>): Some<TValue>;
+  /**
+   * Returns the Result's value if it is successful and the evaluation of the factory function otherwise
+   * @param factory a function which is executed and returned if the Result is failed
+   */
   getValueOrDefault(factory: FunctionOfT<Some<TValue>>): Some<TValue>;
   /**
    * Gets the Result's inner value
@@ -329,18 +337,22 @@ export class Result<TValue = Unit, TError = string> {
   }
 
   /**
-   *
-   * @param predicate
-   * @param error
+   * If the Result has failed, the result is returned.
+   * Otherwise, it executes the predicate and returns a failed Result with the given error
+   * if the predicate returns false, and the current Result if it returns true
+   * @param predicate check against the Result's inner value
+   * @param error An error for the returned Result if the predicate returns false
    */
   ensure(
     predicate: PredicateOfT<TValue>,
     error: Some<TError>
   ): Result<TValue, TError>;
   /**
-   *
-   * @param predicate
-   * @param errorFactory
+   * If the Result has failed, the result is returned.
+   * Otherwise, it executes the predicate and returns a failed Result with an error created from the errorFactory
+   * if the predicate returns false, and the current Result if it returns true
+   * @param predicate check against the Result's inner value
+   * @param errorFactory A function provided the Result's value, used to create an error for the returned Result if the predicate returns false
    */
   ensure(
     predicate: PredicateOfT<TValue>,
@@ -373,9 +385,11 @@ export class Result<TValue = Unit, TError = string> {
   }
 
   /**
-   *
-   * @param projection
-   * @returns
+   * Returns a successful Result with the current value if the projection returns a successful Result
+   * @param projection a function given the current Result's value and returns a new Result
+   * @returns If the Result has failed, it is returned. Otherwise, the projection is executed.
+   * If the projection returns a successful Result, a successful Result with the original value is returned.
+   * If the projection returns a failed Result it is returned.
    */
   check<TOtherValue>(
     projection: FunctionOfTtoK<TValue, Result<TOtherValue, TError>>
@@ -384,7 +398,7 @@ export class Result<TValue = Unit, TError = string> {
   }
 
   /**
-   *
+   * Similar to check, but the projection is only executed if the Result has succeeded and the condition is true
    * @param condition
    * @param projection
    */
@@ -393,7 +407,7 @@ export class Result<TValue = Unit, TError = string> {
     projection: FunctionOfTtoK<TValue, Result<TOtherValue, TError>>
   ): Result<TValue, TError>;
   /**
-   *
+   * Similiar to check, but the projection is only executed if the Result has succeeded and the predicate returns true
    * @param predicate
    * @param projection
    */
@@ -402,7 +416,7 @@ export class Result<TValue = Unit, TError = string> {
     projection: FunctionOfTtoK<TValue, Result<TOtherValue, TError>>
   ): Result<TValue, TError>;
   /**
-   *
+   * Similiar to check, but the projection is only executed if the Result has succeeded and the condition or predicate evaluates to true
    * @param conditionOrPredicate
    * @param projection
    * @returns
@@ -423,9 +437,10 @@ export class Result<TValue = Unit, TError = string> {
   }
 
   /**
-   *
-   * @param projection
-   * @returns
+   * Maps the value successful Result to a new value
+   * @param projection a function given the value of the current Result which returns a new value
+   * @returns If the Result has failed, a new one with the same error is returned.
+   * Otherwise a new successful Result is returned with the value of the projection.
    */
   map<TNewValue>(
     projection: FunctionOfTtoK<TValue, Some<TNewValue>>
@@ -436,9 +451,10 @@ export class Result<TValue = Unit, TError = string> {
   }
 
   /**
-   *
-   * @param projection
-   * @returns
+   * Maps the error of a  failed Result to a new error
+   * @param projection a function given the error of the current Result which returns a new error
+   * @returns If the Result has succeeded, a new one with the same value is returned.
+   * Otherwise a new failed Result is returned with the error created by the projection.
    */
   mapError<TNewError>(
     projection: FunctionOfTtoK<TError, Some<TNewError>>
@@ -449,8 +465,21 @@ export class Result<TValue = Unit, TError = string> {
   }
 
   /**
-   *
-   * @param projection
+   * Converts a failed Result into a successful one
+   * @param projection a function that maps the error of the current Result to a value
+   * @returns A successful Result using the current Result's value if it succeeded and the projection's value if it failed
+   */
+  mapFailure(
+    projection: FunctionOfTtoK<TError, Some<TValue>>
+  ): Result<TValue, TError> {
+    return this.isSuccess
+      ? this
+      : Result.success(projection(this.getErrorOrThrow()));
+  }
+
+  /**
+   * Maps the value successful Result to a new async value wrapped in a ResultAsync
+   * @param projection a function given the value of the current Result which returns a Promise of some value
    * @returns
    */
   mapAsync<TNewValue>(
@@ -462,8 +491,21 @@ export class Result<TValue = Unit, TError = string> {
   }
 
   /**
-   *
-   * @param projection
+   * Maps the error of a failed Result to a new async value wrapped in a ResultAsync
+   * @param projection a function given the error of the current Result which returns a Promise of some value
+   * @returns
+   */
+  mapFailureAsync(
+    projection: FunctionOfTtoK<TError, Promise<Some<TValue>>>
+  ): ResultAsync<TValue, TError> {
+    return this.isSuccess
+      ? ResultAsync.from(this)
+      : ResultAsync.from(projection(this.getErrorOrThrow()));
+  }
+
+  /**
+   * Maps a successful Result to a new Result
+   * @param projection a function given the value of the current Result which returns a new Result of some value
    * @returns
    */
   bind<TNewValue>(
@@ -475,21 +517,21 @@ export class Result<TValue = Unit, TError = string> {
   }
 
   /**
-   *
+   * Maps a successful Result to a new ResultAsync
    * @param projection
    */
   bindAsync<TNewValue>(
     projection: FunctionOfTtoK<TValue, Promise<Result<TNewValue, TError>>>
   ): ResultAsync<TNewValue, TError>;
   /**
-   *
+   * Maps a successful Result to a new ResultAsync
    * @param projection
    */
   bindAsync<TNewValue>(
     projection: FunctionOfTtoK<TValue, ResultAsync<TNewValue, TError>>
   ): ResultAsync<TNewValue, TError>;
   /**
-   *
+   * Maps a successful Result to a new ResultAsync
    * @param projection
    * @returns
    */
@@ -510,9 +552,9 @@ export class Result<TValue = Unit, TError = string> {
   }
 
   /**
-   *
-   * @param action
-   * @returns
+   * Executes an action if the current Result has succeeded
+   * @param action a function given the value of the current Result
+   * @returns the current Result
    */
   tap(action: ActionOfT<TValue>): Result<TValue, TError> {
     if (this.isSuccess) {
@@ -522,47 +564,56 @@ export class Result<TValue = Unit, TError = string> {
     return this;
   }
 
-  tapAsync<TOtherValue>(
-    action: FunctionOfTtoK<TValue, ResultAsync<TOtherValue, TError>>
-  ): ResultAsync<TValue, TError>;
-  tapAsync(action: AsyncActionOfT<TValue>): ResultAsync<TValue, TError>;
-  tapAsync<TOtherValue>(
-    action:
-      | FunctionOfTtoK<TValue, ResultAsync<TOtherValue, TError>>
-      | AsyncActionOfT<TValue>
-  ): ResultAsync<TValue, TError> {
+  /**
+   * Executes an action if the current Result has failed
+   * @param action a function given the error of the current Result
+   * @returns the current Result
+   */
+  tapFailure(action: ActionOfT<TError>): Result<TValue, TError> {
+    if (this.isFailure) {
+      action(this.getErrorOrThrow());
+    }
+
+    return this;
+  }
+
+  /**
+   * Executes an async action if the Result succeeded
+   * @param action a function given the Result's value returns a Promise
+   * @returns a ResultAsync
+   */
+  tapAsync(action: AsyncActionOfT<TValue>): ResultAsync<TValue, TError> {
     if (this.isFailure) {
       return ResultAsync.failure(this.getErrorOrThrow());
     }
 
     const value = this.getValueOrThrow();
-    const result = action(value);
 
-    return isPromise(result)
-      ? ResultAsync.from(result.then(() => value))
-      : ResultAsync.from(result.toPromise().then(() => value));
+    return ResultAsync.from(action(value).then(() => value));
   }
 
   /**
-   *
-   * @param condition
-   * @param action
+   * Executes an action if the given condition is true and the Result has succeeded
+   * @param condition a boolean value
+   * @param action a function given the Result's value
+   * @returns the current Result
    */
   tapIf(condition: boolean, action: ActionOfT<TValue>): Result<TValue, TError>;
   /**
-   *
-   * @param predicate
-   * @param action
+   * Executes and action if the given predicate evaluates to true and the Result has succeeded
+   * @param predicate a function given the Result's value and returns a boolean
+   * @param action a function given the Result's value
+   * @returns the current Result
    */
   tapIf(
     predicate: PredicateOfT<TValue>,
     action: ActionOfT<TValue>
   ): Result<TValue, TError>;
   /**
-   *
-   * @param conditionOrPredicate
-   * @param action
-   * @returns
+   * Executes and action if the given condition evaluates to true and the Result has succeeded
+   * @param conditionOrPredicate a boolean value or predicate
+   * @param action a function given the Result's value
+   * @returns the current Result
    */
   tapIf(
     conditionOrPredicate: boolean | PredicateOfT<TValue>,
@@ -584,25 +635,26 @@ export class Result<TValue = Unit, TError = string> {
   }
 
   /**
-   *
+   * Maps a successful Result's value to a new value,
+   * or a failed Result's error to a new value
    * @param matcher
    */
   match<TNewValue>(
-    matcher: ResultMatcher<TValue, TError, Some<TNewValue>>
+    matcher: ResultMatcher<TValue, TError, TNewValue>
   ): TNewValue;
   /**
-   *
+   * Executes an action for a Result in either the successful and failed state
    * @param matcher
    */
   match(matcher: ResultMatcherNoReturn<TValue, TError>): Unit;
   /**
-   *
+   * Executes functions for a Result in either the successful and failed state
    * @param matcher
    * @returns
    */
   match<TNewValue>(
     matcher:
-      | ResultMatcher<TValue, TError, Some<TNewValue>>
+      | ResultMatcher<TValue, TError, TNewValue>
       | ResultMatcherNoReturn<TValue, TError>
   ): TNewValue | Unit {
     if (this.isSuccess) {
@@ -621,7 +673,7 @@ export class Result<TValue = Unit, TError = string> {
   }
 
   /**
-   *
+   * Executes the same function for both failed and successful Results
    * @param projection
    * @returns
    */
@@ -634,55 +686,11 @@ export class Result<TValue = Unit, TError = string> {
   /**
    *
    * @param action
-   * @returns
-   */
-  onFailure(action: ActionOfT<TError>): Result<TValue, TError> {
-    if (this.isFailure) {
-      action(this.getErrorOrThrow());
-    }
-
-    return this;
-  }
-
-  /**
-   *
-   * @returns
-   */
-  convertFailure<TNewValue>(): Result<TNewValue, TError> {
-    if (this.isSuccess) {
-      throw new Error('Cannot convert a failure for a successful Result');
-    }
-
-    return Result.failure(this.getErrorOrThrow());
-  }
-
-  /**
-   *
-   * @param action
    * @param errorCreator
    * @returns
-   */
-  onSuccessTry(
-    action: Action,
-    errorCreator: FunctionOfTtoK<unknown, Some<TError>>
-  ): Result<TValue, TError>;
-  /**
-   *
-   * @param action
-   * @param errorCreator
    */
   onSuccessTry(
     action: ActionOfT<TValue>,
-    errorCreator: FunctionOfTtoK<unknown, Some<TError>>
-  ): Result<TValue, TError>;
-  /**
-   *
-   * @param action
-   * @param errorCreator
-   * @returns
-   */
-  onSuccessTry(
-    action: Action | ActionOfT<TValue>,
     errorCreator: FunctionOfTtoK<unknown, Some<TError>>
   ): Result<TValue, TError> {
     if (this.isFailure) {
@@ -707,9 +715,7 @@ export class Result<TValue = Unit, TError = string> {
    * @returns
    */
   onSuccessTryAsync(
-    asyncAction:
-      | FunctionOfT<Promise<void>>
-      | FunctionOfTtoK<TValue, Promise<void>>,
+    asyncAction: FunctionOfTtoK<TValue, Promise<void>>,
     errorHander: FunctionOfTtoK<unknown, Some<TError>>
   ): ResultAsync<TValue, TError> {
     if (this.isFailure) {
@@ -731,33 +737,10 @@ export class Result<TValue = Unit, TError = string> {
     return ResultAsync.from<TValue, TError>(result());
   }
 
-  onSuccessTryMap<TNewValue>(
-    projection: FunctionOfTtoK<TValue, Some<TNewValue>>,
-    errorHandler: FunctionOfTtoK<unknown, Some<TError>>
-  ): Result<TNewValue, TError>;
-  onSuccessTryMap<TNewValue>(
-    projection: FunctionOfT<Some<TNewValue>>,
-    errorHandler: FunctionOfTtoK<unknown, Some<TError>>
-  ): Result<TNewValue, TError>;
-  onSuccessTryMap<TNewValue>(
-    selector:
-      | FunctionOfT<Some<TNewValue>>
-      | FunctionOfTtoK<TValue, Some<TNewValue>>,
-    errorHandler: FunctionOfTtoK<unknown, Some<TError>>
-  ): Result<TNewValue, TError> {
-    if (this.isFailure) {
-      return Result.failure(this.getErrorOrThrow());
-    }
-
-    try {
-      const value = selector(this.getValueOrThrow());
-
-      return Result.success(value);
-    } catch (error: unknown) {
-      return Result.failure(errorHandler(error));
-    }
-  }
-
+  /**
+   * Returns a string representation of the Result state (success/failure)
+   * @returns
+   */
   toString(): string {
     return this.isSuccess ? 'Result.success' : 'Result.failure';
   }
