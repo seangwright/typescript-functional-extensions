@@ -1,5 +1,7 @@
 export type FunctionOfTtoK<T, K> = (v: T) => K;
+export type AsyncFunctionOfTtoK<T, K> = (v: T) => Promise<K>;
 export type FunctionOfT<T> = () => T;
+export type AsyncFunctionOfT<T> = () => Promise<T>;
 export type Predicate = () => boolean;
 export type PredicateOfT<T> = (v: T) => boolean;
 export type ActionOfT<T> = (v: T) => void;

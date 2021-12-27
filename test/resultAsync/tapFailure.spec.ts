@@ -47,21 +47,5 @@ describe('ResultAsync', () => {
       expect(result).toFailWith('error');
       expect(wasCalled).toBe(true);
     });
-
-    test('calls a ResultAsync returning action with a failed ResultAsync', async () => {
-      let wasCalled = false;
-      const sut = ResultAsync.failure('error');
-
-      const result = await sut
-        .tapFailure((_num) => {
-          wasCalled = true;
-
-          return ResultAsync.success();
-        })
-        .toPromise();
-
-      expect(result).toFailWith('error');
-      expect(wasCalled).toBe(true);
-    });
   });
 });

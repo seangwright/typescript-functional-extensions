@@ -49,21 +49,5 @@ describe('ResultAsync', () => {
       expect(result).toSucceedWith(1);
       expect(wasCalled).toBe(true);
     });
-
-    test('calls a ResultAsync returning action with a successful ResultAsync', async () => {
-      let wasCalled = false;
-      const sut = ResultAsync.success(1);
-
-      const result = await sut
-        .tap((_num) => {
-          wasCalled = true;
-
-          return ResultAsync.success();
-        })
-        .toPromise();
-
-      expect(result).toSucceedWith(1);
-      expect(wasCalled).toBe(true);
-    });
   });
 });
