@@ -1,9 +1,11 @@
-import { AsyncAction, AsyncFunctionOfT, AsyncFunctionOfTtoK } from '.';
 import { Result } from './result';
 import { Unit } from './unit';
 import {
   ActionOfT,
+  AsyncAction,
   AsyncActionOfT,
+  AsyncFunctionOfT,
+  AsyncFunctionOfTtoK,
   FunctionOfT,
   FunctionOfTtoK,
   isDefined,

@@ -1,4 +1,5 @@
 import { Maybe } from './maybe';
+import { map, MaybeAsyncOpFn } from './maybeAsyncFns';
 import { ResultAsync } from './resultAsync';
 import { Unit } from './unit';
 import {
@@ -11,6 +12,7 @@ import {
   isPromise,
   MaybeMatcher,
   MaybeMatcherNoReturn,
+  pipeFromArray,
   Some,
 } from './utilities';
 
@@ -24,8 +26,8 @@ export class MaybeAsync<TValue> {
    * @returns MaybeAsync
    */
   static from<TValue>(maybe: Maybe<TValue>): MaybeAsync<TValue>;
-  static from<TValue>(promise: Promise<Some<TValue>>): MaybeAsync<TValue>;
   static from<TValue>(maybePromise: Promise<Maybe<TValue>>): MaybeAsync<TValue>;
+  static from<TValue>(promise: Promise<Some<TValue>>): MaybeAsync<TValue>;
   static from<TValue>(
     valueOrPromiseOrMaybePromise:
       | Promise<Some<TValue> | Maybe<TValue>>
@@ -75,6 +77,16 @@ export class MaybeAsync<TValue> {
     this.value = value;
   }
 
+  pipe(): MaybeAsync<TValue>;
+  pipe<A>(op1: MaybeAsyncOpFn<TValue, A>): MaybeAsync<A>;
+  pipe<A, B>(
+    op1: MaybeAsyncOpFn<TValue, A>,
+    op2: MaybeAsyncOpFn<A, B>
+  ): MaybeAsync<B>;
+  pipe(...operations: FunctionOfTtoK<any, any>[]): MaybeAsync<any> {
+    return pipeFromArray(operations)(this);
+  }
+
   map<TNewValue>(
     projection: FunctionOfTtoK<TValue, Some<TNewValue>>
   ): MaybeAsync<TNewValue>;
@@ -86,21 +98,7 @@ export class MaybeAsync<TValue> {
       | FunctionOfTtoK<TValue, Some<TNewValue>>
       | FunctionOfTtoK<TValue, Promise<Some<TNewValue>>>
   ): MaybeAsync<TNewValue> {
-    return new MaybeAsync(
-      this.value.then(async (m) => {
-        if (m.hasNoValue) {
-          return Maybe.none<TNewValue>();
-        }
-
-        const result = projection(m.getValueOrThrow());
-
-        if (isPromise(result)) {
-          return result.then((r) => Maybe.some(r));
-        }
-
-        return Maybe.some(result);
-      })
-    );
+    return this.pipe(map(projection));
   }
 
   tap(action: ActionOfT<TValue>): MaybeAsync<TValue>;

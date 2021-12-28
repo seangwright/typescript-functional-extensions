@@ -53,3 +53,26 @@ export type ResultMatcherNoReturn<TValue, TError> = {
   success: ActionOfT<TValue>;
   failure: ActionOfT<TError>;
 };
+
+function identity<T>(x: T): T {
+  return x;
+}
+
+export function pipeFromArray<T, R>(
+  fns: Array<FunctionOfTtoK<T, R>>
+): FunctionOfTtoK<T, R> {
+  if (fns.length === 0) {
+    return identity as FunctionOfTtoK<any, any>;
+  }
+
+  if (fns.length === 1) {
+    return fns[0];
+  }
+
+  return function piped(input: T): R {
+    return fns.reduce(
+      (prev: any, fn: FunctionOfTtoK<T, R>) => fn(prev),
+      input as any
+    );
+  };
+}

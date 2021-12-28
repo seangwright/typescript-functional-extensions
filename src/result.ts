@@ -1,15 +1,16 @@
-import { ErrorHandler, isSome } from '.';
 import { ResultAsync } from './resultAsync';
 import { Unit } from './unit';
 import {
   Action,
   ActionOfT,
   AsyncActionOfT,
+  ErrorHandler,
   FunctionOfT,
   FunctionOfTtoK,
   isDefined,
   isFunction,
   isPromise,
+  isSome,
   never,
   None,
   Predicate,
