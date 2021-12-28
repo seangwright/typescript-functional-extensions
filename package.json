@@ -1,17 +1,23 @@
 {
   "name": "typescript-functional-extensions",
   "description": "A TypeScript implementation of https://github.com/vkhorikov/CSharpFunctionalExtensions",
-  "version": "1.0.0",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
-  "type": "module",
+  "version": "1.0.1-alpha.1",
+  "main": "dist/cjs/index.js",
+  "module": "dist/esm/index.js",
+  "exports": {
+    ".": {
+      "import": "./dist/esm/index.js",
+      "require": "./dist/cjs/index.js"
+    }
+  },
   "files": [
     "/dist"
   ],
   "scripts": {
     "start": "tsc --watch",
     "prebuild": "trash dist",
-    "build": "tsc",
+    "build": "tsc -p tsconfig.json && tsc -p tsconfig.cjs.json",
+    "postbuild": "cpy package.cjs.json ./dist/cjs && cpy package.esm.json ./dist/esm",
     "test": "jest",
     "test:watch": "jest --watchAll"
   },
@@ -22,6 +28,7 @@
     "jest": "27.4.5",
     "prettier": "2.5.1",
     "trash-cli": "5.0.0",
+    "cpy-cli": "3.1.1",
     "ts-jest": "27.1.2",
     "tslib": "2.3.1",
     "typescript": "4.5.4"
