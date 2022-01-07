@@ -251,9 +251,9 @@ export class Result<TValue = Unit, TError = string> {
     const { value, error, isSuccess } = state;
 
     if (isSome(value) && !isSuccess) {
-      throw new Error('Value cannot be defined for failed ResultAll');
+      throw new Error('Value cannot be defined for failed Result');
     } else if (isSome(error) && isSuccess) {
-      throw new Error('Error cannot be defined for successful ResultAll');
+      throw new Error('Error cannot be defined for successful Result');
     } else if (!isSome(value) && !isSome(error)) {
       throw new Error('Value or Error must be defined');
     }
