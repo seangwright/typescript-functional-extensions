@@ -136,6 +136,36 @@ const maybe = Maybe.none<Food>()
   }); // None!
 ```
 
+#### Pipe
+
+```typescript
+// custom-operators.ts
+import { logger, LogLevel } from 'logger';
+
+export function log<TValue>(
+  messageCreator: FunctionOfTtoK<TValue, string>,
+  logLevel: LogLevel = 'debug'
+): MaybeOpFn<TValue, TValue> {
+  return (maybe) => {
+    if (maybe.hasValue) {
+      logger.log(messageCreator(maybe.getValueOrThrow()), logLevel);
+    } else {
+      logger.error('No value found!');
+    }
+
+    return maybe;
+  };
+}
+
+// app.ts
+import { log } from './custom-operators.ts';
+
+const maybe = Maybe.some('apple')
+  .pipe(log((f) => `My fruit is ${f}`, 'information'))
+  .map((f) => `${f} and banana`)
+  .pipe(log((f) => `Now I have ${f}`));
+```
+
 ### MaybeAsync
 
 `MaybeAsync` represents a future value (`Promise`) that might or might not exist.
