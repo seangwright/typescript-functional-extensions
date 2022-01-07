@@ -1,5 +1,6 @@
-/** @type {import('ts-jest/dist/types').InitialOptionsTsJest} */
-export default {
+import { InitialOptionsTsJest } from 'ts-jest';
+
+const config: InitialOptionsTsJest = {
   preset: 'ts-jest',
   testEnvironment: 'node',
   globals: {
@@ -14,3 +15,5 @@ export default {
   setupFilesAfterEnv: ['./test/expectExtensions.ts'],
   extensionsToTreatAsEsm: ['.ts'],
 };
+
+export default config;
