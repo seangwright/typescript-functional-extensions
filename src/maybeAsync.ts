@@ -1,5 +1,4 @@
 import { Maybe } from './maybe';
-import { map, MaybeAsyncOpFn } from './maybeAsyncFns';
 import { ResultAsync } from './resultAsync';
 import { Unit } from './unit';
 import {
@@ -83,6 +82,51 @@ export class MaybeAsync<TValue> {
     op1: MaybeAsyncOpFn<TValue, A>,
     op2: MaybeAsyncOpFn<A, B>
   ): MaybeAsync<B>;
+  pipe<A, B, C>(
+    op1: MaybeAsyncOpFn<TValue, A>,
+    op2: MaybeAsyncOpFn<A, B>,
+    op3: MaybeAsyncOpFn<B, C>
+  ): MaybeAsync<C>;
+  pipe<A, B, C, D>(
+    op1: MaybeAsyncOpFn<TValue, A>,
+    op2: MaybeAsyncOpFn<A, B>,
+    op3: MaybeAsyncOpFn<B, C>,
+    op4: MaybeAsyncOpFn<C, D>
+  ): MaybeAsync<D>;
+  pipe<A, B, C, D, E>(
+    op1: MaybeAsyncOpFn<TValue, A>,
+    op2: MaybeAsyncOpFn<A, B>,
+    op3: MaybeAsyncOpFn<B, C>,
+    op4: MaybeAsyncOpFn<C, D>,
+    op5: MaybeAsyncOpFn<D, E>
+  ): MaybeAsync<E>;
+  pipe<A, B, C, D, E, F>(
+    op1: MaybeAsyncOpFn<TValue, A>,
+    op2: MaybeAsyncOpFn<A, B>,
+    op3: MaybeAsyncOpFn<B, C>,
+    op4: MaybeAsyncOpFn<C, D>,
+    op5: MaybeAsyncOpFn<D, E>,
+    op6: MaybeAsyncOpFn<E, F>
+  ): MaybeAsync<F>;
+  pipe<A, B, C, D, E, F, G>(
+    op1: MaybeAsyncOpFn<TValue, A>,
+    op2: MaybeAsyncOpFn<A, B>,
+    op3: MaybeAsyncOpFn<B, C>,
+    op4: MaybeAsyncOpFn<C, D>,
+    op5: MaybeAsyncOpFn<D, E>,
+    op6: MaybeAsyncOpFn<E, F>,
+    op7: MaybeAsyncOpFn<F, G>
+  ): MaybeAsync<G>;
+  pipe<A, B, C, D, E, F, G, H>(
+    op1: MaybeAsyncOpFn<TValue, A>,
+    op2: MaybeAsyncOpFn<A, B>,
+    op3: MaybeAsyncOpFn<B, C>,
+    op4: MaybeAsyncOpFn<C, D>,
+    op5: MaybeAsyncOpFn<D, E>,
+    op6: MaybeAsyncOpFn<E, F>,
+    op7: MaybeAsyncOpFn<F, G>,
+    op8: MaybeAsyncOpFn<G, H>
+  ): MaybeAsync<H>;
   pipe(...operations: FunctionOfTtoK<any, any>[]): MaybeAsync<any> {
     return pipeFromArray(operations)(this);
   }
@@ -98,7 +142,21 @@ export class MaybeAsync<TValue> {
       | FunctionOfTtoK<TValue, Some<TNewValue>>
       | FunctionOfTtoK<TValue, Promise<Some<TNewValue>>>
   ): MaybeAsync<TNewValue> {
-    return this.pipe(map(projection));
+    return MaybeAsync.from<TNewValue>(
+      this.value.then(async (m) => {
+        if (m.hasNoValue) {
+          return Maybe.none<TNewValue>();
+        }
+
+        const result = projection(m.getValueOrThrow());
+
+        if (isPromise(result)) {
+          return result.then((r) => Maybe.some<TNewValue>(r));
+        }
+
+        return Maybe.some(result);
+      })
+    );
   }
 
   tap(action: ActionOfT<TValue>): MaybeAsync<TValue>;
@@ -235,3 +293,5 @@ export class MaybeAsync<TValue> {
       : this.value;
   }
 }
+
+export type MaybeAsyncOpFn<A, B> = FunctionOfTtoK<MaybeAsync<A>, MaybeAsync<B>>;

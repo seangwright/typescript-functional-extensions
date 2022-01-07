@@ -1,6 +1,6 @@
-import { Maybe } from '@/src/maybe';
-import { map as asyncMap } from '@/src/maybeAsyncFns';
-import { map, mapAsync, tap } from '@/src/maybeFns';
+import { Maybe, MaybeOpFn, MaybeOpFnAsync } from '@/src/maybe';
+import { MaybeAsync, MaybeAsyncOpFn } from '@/src/maybeAsync';
+import { ActionOfT, FunctionOfTtoK, isPromise, Some } from '@/src/utilities';
 
 describe('Maybe', () => {
   describe('pipe', () => {
@@ -48,3 +48,57 @@ describe('Maybe', () => {
     });
   });
 });
+
+function map<TValue, TNewValue>(
+  projection: FunctionOfTtoK<TValue, Some<TNewValue>>
+): MaybeOpFn<TValue, TNewValue> {
+  return (maybe) => {
+    return maybe.hasValue
+      ? Maybe.some(projection(maybe.getValueOrThrow()))
+      : Maybe.none<TNewValue>();
+  };
+}
+
+function tap<TValue>(action: ActionOfT<TValue>): MaybeOpFn<TValue, TValue> {
+  return (maybe) => {
+    if (maybe.hasValue) {
+      action(maybe.getValueOrThrow());
+    }
+
+    return maybe;
+  };
+}
+
+function mapAsync<TValue, TNewValue>(
+  projection: FunctionOfTtoK<TValue, Promise<Some<TNewValue>>>
+): MaybeOpFnAsync<TValue, TNewValue> {
+  return (maybe) => {
+    return maybe.hasValue
+      ? MaybeAsync.from(projection(maybe.getValueOrThrow()))
+      : MaybeAsync.none();
+  };
+}
+
+function asyncMap<TValue, TNewValue>(
+  projection:
+    | FunctionOfTtoK<TValue, Promise<Some<TNewValue>>>
+    | FunctionOfTtoK<TValue, Some<TNewValue>>
+): MaybeAsyncOpFn<TValue, TNewValue> {
+  return (maybe) => {
+    return MaybeAsync.from<TNewValue>(
+      maybe.toPromise().then(async (m) => {
+        if (m.hasNoValue) {
+          return Maybe.none<TNewValue>();
+        }
+
+        const result = projection(m.getValueOrThrow());
+
+        if (isPromise(result)) {
+          return result.then((r) => Maybe.some<TNewValue>(r));
+        }
+
+        return Maybe.some(result);
+      })
+    );
+  };
+}

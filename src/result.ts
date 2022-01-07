@@ -13,6 +13,7 @@ import {
   isSome,
   never,
   None,
+  pipeFromArray,
   Predicate,
   PredicateOfT,
   ResultMatcher,
@@ -437,6 +438,26 @@ export class Result<TValue = Unit, TError = string> {
     return condition ? this.check(projection) : this;
   }
 
+  pipe(): Result<TValue, TError>;
+
+  pipe<A, AE>(op1: ResultOpFnAsync<TValue, TError, A, AE>): ResultAsync<A, AE>;
+  pipe<A, AE>(op1: ResultOpFn<TValue, TError, A, AE>): Result<A, AE>;
+
+  pipe<A, AE, B, BE>(
+    op1: ResultOpFn<TValue, TError, A, AE>,
+    op2: ResultOpFnAsync<A, AE, B, BE>
+  ): ResultAsync<B, BE>;
+  pipe<A, AE, B, BE>(
+    op1: ResultOpFn<TValue, TError, A, AE>,
+    op2: ResultOpFn<A, AE, B, BE>
+  ): Result<B, BE>;
+
+  pipe(
+    ...operations: FunctionOfTtoK<any, any>[]
+  ): Result<any, any> | ResultAsync<any, any> {
+    return pipeFromArray(operations)(this);
+  }
+
   /**
    * Maps the value successful Result to a new value
    * @param projection a function given the value of the current Result which returns a new value
@@ -773,3 +794,12 @@ type ResultState<TValue, TError> = {
   value: Some<TValue> | undefined;
   error: Some<TError> | undefined;
 };
+
+export type ResultOpFn<A, AE, B, BE> = FunctionOfTtoK<
+  Result<A, AE>,
+  Result<B, BE>
+>;
+export type ResultOpFnAsync<A, AE, B, BE> = FunctionOfTtoK<
+  Result<A, AE>,
+  ResultAsync<B, BE>
+>;

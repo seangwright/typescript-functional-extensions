@@ -1,16 +1,4 @@
 import { MaybeAsync } from './maybeAsync';
-import {
-  bind,
-  bindAsync,
-  map,
-  mapAsync,
-  MaybeOpFn,
-  MaybeOpFnAsync,
-  tap,
-  tapAsync,
-  tapNone,
-  tapNoneAsync,
-} from './maybeFns';
 import { Result } from './result';
 import { Unit } from './unit';
 import {
@@ -359,7 +347,9 @@ export class Maybe<TValue> {
   map<TNewValue>(
     projection: FunctionOfTtoK<TValue, Some<TNewValue>>
   ): Maybe<TNewValue> {
-    return this.pipe(map(projection));
+    return this.hasValue
+      ? Maybe.some(projection(this.getValueOrThrow()))
+      : Maybe.none<TNewValue>();
   }
 
   /**
@@ -371,7 +361,9 @@ export class Maybe<TValue> {
   mapAsync<TNewValue>(
     projection: FunctionOfTtoK<TValue, Promise<Some<TNewValue>>>
   ): MaybeAsync<TNewValue> {
-    return this.pipe(mapAsync(projection));
+    return this.hasValue
+      ? MaybeAsync.from(projection(this.getValueOrThrow()))
+      : MaybeAsync.none();
   }
 
   /**
@@ -380,7 +372,11 @@ export class Maybe<TValue> {
    * @returns
    */
   tap(action: ActionOfT<TValue>): Maybe<TValue> {
-    return this.pipe(tap(action));
+    if (this.hasValue) {
+      action(this.getValueOrThrow());
+    }
+
+    return this;
   }
 
   /**
@@ -392,7 +388,16 @@ export class Maybe<TValue> {
   tapAsync(
     asyncAction: FunctionOfTtoK<TValue, Promise<void>>
   ): MaybeAsync<TValue> {
-    return this.pipe(tapAsync(asyncAction));
+    if (this.hasNoValue) {
+      return MaybeAsync.none();
+    }
+
+    const promise = new Promise<Some<TValue>>((resolve) => {
+      const value = this.getValueOrThrow();
+      asyncAction(value).then(() => resolve(value));
+    });
+
+    return MaybeAsync.from(promise);
   }
 
   /**
@@ -400,7 +405,11 @@ export class Maybe<TValue> {
    * @param action
    */
   tapNone(action: Action): Maybe<TValue> {
-    return this.pipe(tapNone(action));
+    if (this.hasNoValue) {
+      action();
+    }
+
+    return this;
   }
 
   /**
@@ -408,7 +417,11 @@ export class Maybe<TValue> {
    * @param action
    */
   tapNoneAsync(action: AsyncAction): MaybeAsync<TValue> {
-    return this.pipe(tapNoneAsync(action));
+    if (this.hasValue) {
+      return MaybeAsync.some(this.getValueOrThrow());
+    }
+
+    return MaybeAsync.from(action().then(() => Maybe.none<TValue>()));
   }
 
   /**
@@ -419,7 +432,7 @@ export class Maybe<TValue> {
   bind<TNewValue>(
     projection: FunctionOfTtoK<TValue, Maybe<Some<TNewValue>>>
   ): Maybe<TNewValue> {
-    return this.pipe(bind(projection));
+    return this.hasValue ? projection(this.getValueOrThrow()) : Maybe.none();
   }
 
   /**
@@ -431,7 +444,9 @@ export class Maybe<TValue> {
   bindAsync<TNewValue>(
     projection: FunctionOfTtoK<TValue, MaybeAsync<Some<TNewValue>>>
   ): MaybeAsync<TNewValue> {
-    return this.pipe(bindAsync(projection));
+    return this.hasValue
+      ? projection(this.getValueOrThrow())
+      : MaybeAsync.none();
   }
 
   /**
@@ -611,3 +626,6 @@ export class Maybe<TValue> {
     );
   }
 }
+
+export type MaybeOpFn<A, B> = FunctionOfTtoK<Maybe<A>, Maybe<B>>;
+export type MaybeOpFnAsync<A, B> = FunctionOfTtoK<Maybe<A>, MaybeAsync<B>>;
