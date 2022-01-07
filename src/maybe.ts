@@ -332,6 +332,11 @@ export class Maybe<TValue> {
     op7: MaybeOpFn<F, G>,
     op8: MaybeOpFnAsync<G, H>
   ): Maybe<H>;
+  /**
+   * Executes the given operator functions, creating a custom pipeline
+   * @param operations Maybe operation functions
+   * @returns
+   */
   pipe(
     ...operations: FunctionOfTtoK<any, any>[]
   ): Maybe<any> | MaybeAsync<any> {

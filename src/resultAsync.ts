@@ -11,6 +11,7 @@ import {
   isDefined,
   isFunction,
   isPromise,
+  pipeFromArray,
   PredicateOfT,
   ResultMatcher,
   ResultMatcherNoReturn,
@@ -270,6 +271,66 @@ export class ResultAsync<TValue = Unit, TError = string> {
         return result;
       })
     );
+  }
+
+  pipe(): ResultAsync<TValue, TError>;
+  pipe<A, AE>(op1: ResultAsyncOpFn<TValue, TError, A, AE>): ResultAsync<A, AE>;
+  pipe<A, AE, B, BE>(
+    op1: ResultAsyncOpFn<TValue, TError, A, AE>,
+    op2: ResultAsyncOpFn<A, AE, B, BE>
+  ): ResultAsync<B, BE>;
+  pipe<A, AE, B, BE, C, CE>(
+    op1: ResultAsyncOpFn<TValue, TError, A, AE>,
+    op2: ResultAsyncOpFn<A, AE, B, BE>,
+    op3: ResultAsyncOpFn<B, BE, C, CE>
+  ): ResultAsync<C, CE>;
+  pipe<A, AE, B, BE, C, CE, D, DE>(
+    op1: ResultAsyncOpFn<TValue, TError, A, AE>,
+    op2: ResultAsyncOpFn<A, AE, B, BE>,
+    op3: ResultAsyncOpFn<B, BE, C, CE>,
+    op4: ResultAsyncOpFn<C, CE, D, DE>
+  ): ResultAsync<D, DE>;
+  pipe<A, AE, B, BE, C, CE, D, DE, E, EE>(
+    op1: ResultAsyncOpFn<TValue, TError, A, AE>,
+    op2: ResultAsyncOpFn<A, AE, B, BE>,
+    op3: ResultAsyncOpFn<B, BE, C, CE>,
+    op4: ResultAsyncOpFn<C, CE, D, DE>,
+    op5: ResultAsyncOpFn<D, DE, E, EE>
+  ): ResultAsync<E, EE>;
+  pipe<A, AE, B, BE, C, CE, D, DE, E, EE, F, FE>(
+    op1: ResultAsyncOpFn<TValue, TError, A, AE>,
+    op2: ResultAsyncOpFn<A, AE, B, BE>,
+    op3: ResultAsyncOpFn<B, BE, C, CE>,
+    op4: ResultAsyncOpFn<C, CE, D, DE>,
+    op5: ResultAsyncOpFn<D, DE, E, EE>,
+    op6: ResultAsyncOpFn<E, EE, F, FE>
+  ): ResultAsync<F, FE>;
+  pipe<A, AE, B, BE, C, CE, D, DE, E, EE, F, FE, G, GE>(
+    op1: ResultAsyncOpFn<TValue, TError, A, AE>,
+    op2: ResultAsyncOpFn<A, AE, B, BE>,
+    op3: ResultAsyncOpFn<B, BE, C, CE>,
+    op4: ResultAsyncOpFn<C, CE, D, DE>,
+    op5: ResultAsyncOpFn<D, DE, E, EE>,
+    op6: ResultAsyncOpFn<E, EE, F, FE>,
+    op7: ResultAsyncOpFn<F, FE, G, GE>
+  ): ResultAsync<G, GE>;
+  pipe<A, AE, B, BE, C, CE, D, DE, E, EE, F, FE, G, GE, H, HE>(
+    op1: ResultAsyncOpFn<TValue, TError, A, AE>,
+    op2: ResultAsyncOpFn<A, AE, B, BE>,
+    op3: ResultAsyncOpFn<B, BE, C, CE>,
+    op4: ResultAsyncOpFn<C, CE, D, DE>,
+    op5: ResultAsyncOpFn<D, DE, E, EE>,
+    op6: ResultAsyncOpFn<E, EE, F, FE>,
+    op7: ResultAsyncOpFn<F, FE, G, GE>,
+    op8: ResultAsyncOpFn<G, GE, H, HE>
+  ): ResultAsync<H, HE>;
+  /**
+   * Executes the given operator functions, creating a custom pipeline
+   * @param operations ResultAsync operation functions
+   * @returns
+   */
+  pipe(...operations: FunctionOfTtoK<any, any>[]): ResultAsync<any, any> {
+    return pipeFromArray(operations)(this);
   }
 
   /**
@@ -599,3 +660,8 @@ export class ResultAsync<TValue = Unit, TError = string> {
       : this.value;
   }
 }
+
+export type ResultAsyncOpFn<A, AE, B, BE> = FunctionOfTtoK<
+  ResultAsync<A, AE>,
+  ResultAsync<B, BE>
+>;
