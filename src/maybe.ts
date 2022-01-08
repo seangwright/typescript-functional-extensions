@@ -136,7 +136,7 @@ export class Maybe<TValue> {
     maybes: Maybe<TValue>[],
     projection?: FunctionOfTtoK<TValue, Some<TNewValue>>
   ): TValue[] | TNewValue[] {
-    if (typeof projection === 'function') {
+    if (isFunction(projection)) {
       const values: TNewValue[] = [];
 
       for (const m of maybes) {
