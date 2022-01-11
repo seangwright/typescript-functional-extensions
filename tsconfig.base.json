@@ -1,7 +1,6 @@
 {
   "compilerOptions": {
-    "baseUrl": "src",
-    "rootDir": "src",
+    "baseUrl": ".",
     "module": "ES2015",
     "moduleResolution": "node",
     "declaration": true,

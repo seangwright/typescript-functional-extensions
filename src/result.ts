@@ -1,17 +1,19 @@
-import { ErrorHandler, isSome } from '.';
 import { ResultAsync } from './resultAsync';
 import { Unit } from './unit';
 import {
   Action,
   ActionOfT,
   AsyncActionOfT,
+  ErrorHandler,
   FunctionOfT,
   FunctionOfTtoK,
   isDefined,
   isFunction,
   isPromise,
+  isSome,
   never,
   None,
+  pipeFromArray,
   Predicate,
   PredicateOfT,
   ResultMatcher,
@@ -249,9 +251,9 @@ export class Result<TValue = Unit, TError = string> {
     const { value, error, isSuccess } = state;
 
     if (isSome(value) && !isSuccess) {
-      throw new Error('Value cannot be defined for failed ResultAll');
+      throw new Error('Value cannot be defined for failed Result');
     } else if (isSome(error) && isSuccess) {
-      throw new Error('Error cannot be defined for successful ResultAll');
+      throw new Error('Error cannot be defined for successful Result');
     } else if (!isSome(value) && !isSome(error)) {
       throw new Error('Value or Error must be defined');
     }
@@ -434,6 +436,126 @@ export class Result<TValue = Unit, TError = string> {
       : conditionOrPredicate;
 
     return condition ? this.check(projection) : this;
+  }
+
+  pipe(): Result<TValue, TError>;
+
+  pipe<A, AE>(op1: ResultOpFnAsync<TValue, TError, A, AE>): ResultAsync<A, AE>;
+  pipe<A, AE>(op1: ResultOpFn<TValue, TError, A, AE>): Result<A, AE>;
+
+  pipe<A, AE, B, BE>(
+    op1: ResultOpFn<TValue, TError, A, AE>,
+    op2: ResultOpFnAsync<A, AE, B, BE>
+  ): ResultAsync<B, BE>;
+  pipe<A, AE, B, BE>(
+    op1: ResultOpFn<TValue, TError, A, AE>,
+    op2: ResultOpFn<A, AE, B, BE>
+  ): Result<B, BE>;
+
+  pipe<A, AE, B, BE, C, CE>(
+    op1: ResultOpFn<TValue, TError, A, AE>,
+    op2: ResultOpFn<A, AE, B, BE>,
+    op3: ResultOpFnAsync<B, BE, C, CE>
+  ): ResultAsync<C, CE>;
+  pipe<A, AE, B, BE, C, CE>(
+    op1: ResultOpFn<TValue, TError, A, AE>,
+    op2: ResultOpFn<A, AE, B, BE>,
+    op3: ResultOpFn<B, BE, C, CE>
+  ): Result<C, CE>;
+
+  pipe<A, AE, B, BE, C, CE, D, DE>(
+    op1: ResultOpFn<TValue, TError, A, AE>,
+    op2: ResultOpFn<A, AE, B, BE>,
+    op3: ResultOpFn<B, BE, C, CE>,
+    op4: ResultOpFnAsync<C, CE, D, DE>
+  ): ResultAsync<D, DE>;
+  pipe<A, AE, B, BE, C, CE, D, DE>(
+    op1: ResultOpFn<TValue, TError, A, AE>,
+    op2: ResultOpFn<A, AE, B, BE>,
+    op3: ResultOpFn<B, BE, C, CE>,
+    op4: ResultOpFn<C, CE, D, DE>
+  ): Result<D, DE>;
+
+  pipe<A, AE, B, BE, C, CE, D, DE, E, EE>(
+    op1: ResultOpFn<TValue, TError, A, AE>,
+    op2: ResultOpFn<A, AE, B, BE>,
+    op3: ResultOpFn<B, BE, C, CE>,
+    op4: ResultOpFn<C, CE, D, DE>,
+    op5: ResultOpFnAsync<D, DE, E, EE>
+  ): ResultAsync<E, EE>;
+  pipe<A, AE, B, BE, C, CE, D, DE, E, EE>(
+    op1: ResultOpFn<TValue, TError, A, AE>,
+    op2: ResultOpFn<A, AE, B, BE>,
+    op3: ResultOpFn<B, BE, C, CE>,
+    op4: ResultOpFn<C, CE, D, DE>,
+    op5: ResultOpFn<D, DE, E, EE>
+  ): Result<E, EE>;
+
+  pipe<A, AE, B, BE, C, CE, D, DE, E, EE, F, FE>(
+    op1: ResultOpFn<TValue, TError, A, AE>,
+    op2: ResultOpFn<A, AE, B, BE>,
+    op3: ResultOpFn<B, BE, C, CE>,
+    op4: ResultOpFn<C, CE, D, DE>,
+    op5: ResultOpFn<D, DE, E, EE>,
+    op6: ResultOpFnAsync<E, EE, F, FE>
+  ): ResultAsync<F, FE>;
+  pipe<A, AE, B, BE, C, CE, D, DE, E, EE, F, FE>(
+    op1: ResultOpFn<TValue, TError, A, AE>,
+    op2: ResultOpFn<A, AE, B, BE>,
+    op3: ResultOpFn<B, BE, C, CE>,
+    op4: ResultOpFn<C, CE, D, DE>,
+    op5: ResultOpFn<D, DE, E, EE>,
+    op6: ResultOpFn<E, EE, F, FE>
+  ): Result<F, FE>;
+
+  pipe<A, AE, B, BE, C, CE, D, DE, E, EE, F, FE, G, GE>(
+    op1: ResultOpFn<TValue, TError, A, AE>,
+    op2: ResultOpFn<A, AE, B, BE>,
+    op3: ResultOpFn<B, BE, C, CE>,
+    op4: ResultOpFn<C, CE, D, DE>,
+    op5: ResultOpFn<D, DE, E, EE>,
+    op6: ResultOpFn<E, EE, F, FE>,
+    op7: ResultOpFnAsync<F, FE, G, GE>
+  ): ResultAsync<G, GE>;
+  pipe<A, AE, B, BE, C, CE, D, DE, E, EE, F, FE, G, GE>(
+    op1: ResultOpFn<TValue, TError, A, AE>,
+    op2: ResultOpFn<A, AE, B, BE>,
+    op3: ResultOpFn<B, BE, C, CE>,
+    op4: ResultOpFn<C, CE, D, DE>,
+    op5: ResultOpFn<D, DE, E, EE>,
+    op6: ResultOpFn<E, EE, F, FE>,
+    op7: ResultOpFn<F, FE, G, GE>
+  ): Result<G, GE>;
+
+  pipe<A, AE, B, BE, C, CE, D, DE, E, EE, F, FE, G, GE, H, HE>(
+    op1: ResultOpFn<TValue, TError, A, AE>,
+    op2: ResultOpFn<A, AE, B, BE>,
+    op3: ResultOpFn<B, BE, C, CE>,
+    op4: ResultOpFn<C, CE, D, DE>,
+    op5: ResultOpFn<D, DE, E, EE>,
+    op6: ResultOpFn<E, EE, F, FE>,
+    op7: ResultOpFn<F, FE, G, GE>,
+    op8: ResultOpFnAsync<G, GE, H, HE>
+  ): ResultAsync<H, HE>;
+  pipe<A, AE, B, BE, C, CE, D, DE, E, EE, F, FE, G, GE, H, HE>(
+    op1: ResultOpFn<TValue, TError, A, AE>,
+    op2: ResultOpFn<A, AE, B, BE>,
+    op3: ResultOpFn<B, BE, C, CE>,
+    op4: ResultOpFn<C, CE, D, DE>,
+    op5: ResultOpFn<D, DE, E, EE>,
+    op6: ResultOpFn<E, EE, F, FE>,
+    op7: ResultOpFn<F, FE, G, GE>,
+    op8: ResultOpFn<G, FE, H, HE>
+  ): Result<H, HE>;
+  /**
+   * Executes the given operator functions, creating a custom pipeline
+   * @param operations Result operation functions
+   * @returns
+   */
+  pipe(
+    ...operations: FunctionOfTtoK<any, any>[]
+  ): Result<any, any> | ResultAsync<any, any> {
+    return pipeFromArray(operations)(this);
   }
 
   /**
@@ -772,3 +894,12 @@ type ResultState<TValue, TError> = {
   value: Some<TValue> | undefined;
   error: Some<TError> | undefined;
 };
+
+export type ResultOpFn<A, AE, B, BE> = FunctionOfTtoK<
+  Result<A, AE>,
+  Result<B, BE>
+>;
+export type ResultOpFnAsync<A, AE, B, BE> = FunctionOfTtoK<
+  Result<A, AE>,
+  ResultAsync<B, BE>
+>;

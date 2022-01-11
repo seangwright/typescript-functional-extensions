@@ -1,17 +1,21 @@
-import { Action, AsyncActionOfT, isSome } from '.';
 import { MaybeAsync } from './maybeAsync';
 import { Result } from './result';
 import { Unit } from './unit';
 import {
+  Action,
   ActionOfT,
+  AsyncAction,
+  AsyncActionOfT,
   FunctionOfT,
   FunctionOfTtoK,
   isDefined,
   isFunction,
   isPromise,
+  isSome,
   MaybeMatcher,
   MaybeMatcherNoReturn,
   None,
+  pipeFromArray,
   PredicateOfT,
   Some,
 } from './utilities';
@@ -132,7 +136,7 @@ export class Maybe<TValue> {
     maybes: Maybe<TValue>[],
     projection?: FunctionOfTtoK<TValue, Some<TNewValue>>
   ): TValue[] | TNewValue[] {
-    if (typeof projection === 'function') {
+    if (isFunction(projection)) {
       const values: TNewValue[] = [];
 
       for (const m of maybes) {
@@ -222,6 +226,123 @@ export class Maybe<TValue> {
     throw Error('No value');
   }
 
+  pipe(): Maybe<TValue>;
+
+  pipe<A>(op1: MaybeOpFnAsync<TValue, A>): MaybeAsync<A>;
+  pipe<A>(op1: MaybeOpFn<TValue, A>): Maybe<A>;
+
+  pipe<A, B>(
+    op1: MaybeOpFn<TValue, A>,
+    op2: MaybeOpFnAsync<A, B>
+  ): MaybeAsync<B>;
+  pipe<A, B>(op1: MaybeOpFn<TValue, A>, op2: MaybeOpFn<A, B>): Maybe<B>;
+
+  pipe<A, B, C>(
+    op1: MaybeOpFn<TValue, A>,
+    op2: MaybeOpFn<A, B>,
+    op3: MaybeOpFn<B, C>
+  ): Maybe<C>;
+  pipe<A, B, C>(
+    op1: MaybeOpFn<TValue, A>,
+    op2: MaybeOpFn<A, B>,
+    op3: MaybeOpFnAsync<B, C>
+  ): Maybe<C>;
+
+  pipe<A, B, C, D>(
+    op1: MaybeOpFn<TValue, A>,
+    op2: MaybeOpFn<A, B>,
+    op3: MaybeOpFn<B, C>,
+    op4: MaybeOpFn<C, D>
+  ): Maybe<D>;
+  pipe<A, B, C, D>(
+    op1: MaybeOpFn<TValue, A>,
+    op2: MaybeOpFn<A, B>,
+    op3: MaybeOpFn<B, C>,
+    op4: MaybeOpFnAsync<C, D>
+  ): Maybe<D>;
+
+  pipe<A, B, C, D, E>(
+    op1: MaybeOpFn<TValue, A>,
+    op2: MaybeOpFn<A, B>,
+    op3: MaybeOpFn<B, C>,
+    op4: MaybeOpFn<C, D>,
+    op5: MaybeOpFn<D, E>
+  ): Maybe<E>;
+  pipe<A, B, C, D, E>(
+    op1: MaybeOpFn<TValue, A>,
+    op2: MaybeOpFn<A, B>,
+    op3: MaybeOpFn<B, C>,
+    op4: MaybeOpFn<C, D>,
+    op5: MaybeOpFnAsync<D, E>
+  ): Maybe<E>;
+
+  pipe<A, B, C, D, E, F>(
+    op1: MaybeOpFn<TValue, A>,
+    op2: MaybeOpFn<A, B>,
+    op3: MaybeOpFn<B, C>,
+    op4: MaybeOpFn<C, D>,
+    op5: MaybeOpFn<D, E>,
+    op6: MaybeOpFn<E, F>
+  ): Maybe<F>;
+  pipe<A, B, C, D, E, F>(
+    op1: MaybeOpFn<TValue, A>,
+    op2: MaybeOpFn<A, B>,
+    op3: MaybeOpFn<B, C>,
+    op4: MaybeOpFn<C, D>,
+    op5: MaybeOpFn<D, E>,
+    op6: MaybeOpFnAsync<E, F>
+  ): Maybe<F>;
+
+  pipe<A, B, C, D, E, F, G>(
+    op1: MaybeOpFn<TValue, A>,
+    op2: MaybeOpFn<A, B>,
+    op3: MaybeOpFn<B, C>,
+    op4: MaybeOpFn<C, D>,
+    op5: MaybeOpFn<D, E>,
+    op6: MaybeOpFn<E, F>,
+    op7: MaybeOpFn<F, G>
+  ): Maybe<G>;
+  pipe<A, B, C, D, E, F, G>(
+    op1: MaybeOpFn<TValue, A>,
+    op2: MaybeOpFn<A, B>,
+    op3: MaybeOpFn<B, C>,
+    op4: MaybeOpFn<C, D>,
+    op5: MaybeOpFn<D, E>,
+    op6: MaybeOpFn<E, F>,
+    op7: MaybeOpFnAsync<F, G>
+  ): Maybe<G>;
+
+  pipe<A, B, C, D, E, F, G, H>(
+    op1: MaybeOpFn<TValue, A>,
+    op2: MaybeOpFn<A, B>,
+    op3: MaybeOpFn<B, C>,
+    op4: MaybeOpFn<C, D>,
+    op5: MaybeOpFn<D, E>,
+    op6: MaybeOpFn<E, F>,
+    op7: MaybeOpFn<F, G>,
+    op8: MaybeOpFn<G, H>
+  ): Maybe<H>;
+  pipe<A, B, C, D, E, F, G, H>(
+    op1: MaybeOpFn<TValue, A>,
+    op2: MaybeOpFn<A, B>,
+    op3: MaybeOpFn<B, C>,
+    op4: MaybeOpFn<C, D>,
+    op5: MaybeOpFn<D, E>,
+    op6: MaybeOpFn<E, F>,
+    op7: MaybeOpFn<F, G>,
+    op8: MaybeOpFnAsync<G, H>
+  ): Maybe<H>;
+  /**
+   * Executes the given operator functions, creating a custom pipeline
+   * @param operations Maybe operation functions
+   * @returns
+   */
+  pipe(
+    ...operations: FunctionOfTtoK<any, any>[]
+  ): Maybe<any> | MaybeAsync<any> {
+    return pipeFromArray(operations)(this);
+  }
+
   /**
    * Converts the value of the Maybe, if there is one, to a new value
    * as defined by the provided projection function
@@ -232,8 +353,8 @@ export class Maybe<TValue> {
     projection: FunctionOfTtoK<TValue, Some<TNewValue>>
   ): Maybe<TNewValue> {
     return this.hasValue
-      ? new Maybe(projection(this.getValueOrThrow()))
-      : Maybe.none();
+      ? Maybe.some(projection(this.getValueOrThrow()))
+      : Maybe.none<TNewValue>();
   }
 
   /**
@@ -300,12 +421,12 @@ export class Maybe<TValue> {
    * Executes an action if the Maybe has no value
    * @param action
    */
-  tapNoneAsync(action: Action): MaybeAsync<TValue> {
-    if (this.hasNoValue) {
-      action();
+  tapNoneAsync(action: AsyncAction): MaybeAsync<TValue> {
+    if (this.hasValue) {
+      return MaybeAsync.some(this.getValueOrThrow());
     }
 
-    return MaybeAsync.from(this);
+    return MaybeAsync.from(action().then(() => Maybe.none<TValue>()));
   }
 
   /**
@@ -350,7 +471,7 @@ export class Maybe<TValue> {
     matcherOrprojection:
       | MaybeMatcher<TValue, TNewValue>
       | MaybeMatcherNoReturn<TValue>
-  ): TValue | Unit {
+  ): TNewValue | Unit {
     if (this.hasValue) {
       const someResult = matcherOrprojection.some(this.getValueOrThrow());
 
@@ -510,3 +631,6 @@ export class Maybe<TValue> {
     );
   }
 }
+
+export type MaybeOpFn<A, B> = FunctionOfTtoK<Maybe<A>, Maybe<B>>;
+export type MaybeOpFnAsync<A, B> = FunctionOfTtoK<Maybe<A>, MaybeAsync<B>>;
