@@ -33,21 +33,17 @@ export class Result<TValue = Unit, TError = string> {
    * @returns A Result that is a success when all the input results are also successes.
    */
   static combine(results: Result[]): Result {
-    const failures = results.reduce(
-      (resultFailures, result) =>
-        result.isFailure ? [...resultFailures, result] : resultFailures,
-      [] as Result[]
-    );
+    const failedResults = results.filter((result) => result.isFailure);
 
-    if (failures.length) {
-      const errorMessages = failures
-        .map((failure) => failure.getErrorOrThrow())
-        .join(', ');
-
-      return Result.failure(errorMessages);
+    if (failedResults.length === 0) {
+      return Result.success();
     }
 
-    return Result.success();
+    const errorMessages = failedResults
+      .map((result) => result.getErrorOrThrow())
+      .join(',');
+
+    return Result.failure(errorMessages);
   }
 
   /**
