@@ -26,6 +26,31 @@ import {
  */
 export class Result<TValue = Unit, TError = string> {
   /**
+   * Combines several results (and any error messages) into a single result.
+   * The returned result will be a failure if any of the input results are failures.
+   *
+   * @param results The Results to be combined.
+   * @returns A Result that is a success when all the input results are also successes.
+   */
+  static combine(results: Result[]): Result {
+    const failures = results.reduce(
+      (resultFailures, result) =>
+        result.isFailure ? [...resultFailures, result] : resultFailures,
+      [] as Result[]
+    );
+
+    if (failures.length) {
+      const errorMessages = failures
+        .map((failure) => failure.getErrorOrThrow())
+        .join(', ');
+
+      return Result.failure(errorMessages);
+    }
+
+    return Result.success();
+  }
+
+  /**
    * Creates a new successful Result with a string error type
    * and Unit value type
    */
