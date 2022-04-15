@@ -18,12 +18,9 @@ import {
   PredicateOfT,
   ResultMatcher,
   ResultMatcherNoReturn,
+  ResultValueOf,
   Some,
 } from './utilities';
-
-export type ResultValueOf<T> = T extends Result<infer ResultValue>
-  ? ResultValue
-  : unknown;
 
 /**
  * Represents a successful or failed operation
