@@ -21,6 +21,10 @@ import {
   Some,
 } from './utilities';
 
+export type ResultValueOf<T> = T extends Result<infer ResultValue>
+  ? ResultValue
+  : unknown;
+
 /**
  * Represents a successful or failed operation
  */
@@ -32,69 +36,34 @@ export class Result<TValue = Unit, TError = string> {
    * @param results The Results to be combined.
    * @returns A Result that is a success when all the input results are also successes.
    */
-  static combine<A, AE>(results: Result<A, AE>): Result<A>;
-  static combine<A, AE, B, BE>(
-    ...results: [Result<A, AE>, Result<B, BE>]
-  ): Result<[A, B]>;
-  static combine<A, AE, B, BE, C, CE>(
-    ...results: [Result<A, AE>, Result<B, BE>, Result<C, CE>]
-  ): Result<[A, B, C]>;
-  static combine<A, AE, B, BE, C, CE, D, DE>(
-    ...results: [Result<A, AE>, Result<B, BE>, Result<C, CE>, Result<D, DE>]
-  ): Result<[A, B, C, D]>;
-  static combine<A, AE, B, BE, C, CE, D, DE, E, EE>(
-    ...results: [
-      Result<A, AE>,
-      Result<B, BE>,
-      Result<C, CE>,
-      Result<D, DE>,
-      Result<E, EE>
-    ]
-  ): Result<[A, B, C, D, E]>;
-  static combine<A, AE, B, BE, C, CE, D, DE, E, EE, F, FE>(
-    ...results: [
-      Result<A, AE>,
-      Result<B, BE>,
-      Result<C, CE>,
-      Result<D, DE>,
-      Result<E, EE>,
-      Result<F, FE>
-    ]
-  ): Result<[A, B, C, D, E, F]>;
-  static combine<A, AE, B, BE, C, CE, D, DE, E, EE, F, FE, G, GE>(
-    ...results: [
-      Result<A, AE>,
-      Result<B, BE>,
-      Result<C, CE>,
-      Result<D, DE>,
-      Result<E, EE>,
-      Result<F, FE>,
-      Result<G, GE>
-    ]
-  ): Result<[A, B, C, D, E, F, G]>;
-  static combine<A, AE, B, BE, C, CE, D, DE, E, EE, F, FE, G, GE, H, HE>(
-    ...results: [
-      Result<A, AE>,
-      Result<B, BE>,
-      Result<C, CE>,
-      Result<D, DE>,
-      Result<E, EE>,
-      Result<F, FE>,
-      Result<G, GE>,
-      Result<H, HE>
-    ]
-  ): Result<[A, B, C, D, E, F, G, H]>;
-  static combine(...results: Result[]): Result {
-    const failedResults = results.filter((result) => result.isFailure);
-    const succeededResults = results.filter((result) => result.isSuccess);
+  static combine<T extends Record<string, Result<unknown>>>(
+    results: T
+  ): Result<{ [K in keyof T]: ResultValueOf<T[K]> }> {
+    const resultEntries = Object.entries(results);
+
+    const failedResults = resultEntries.filter(
+      ([, result]) => result.isFailure
+    );
+    const succeededResults = resultEntries.filter(
+      ([, result]) => result.isSuccess
+    );
 
     if (failedResults.length === 0) {
-      const values = succeededResults.map((result) => result.getValueOrThrow());
-      return Result.success(values);
+      const values = succeededResults.reduce(
+        (resultValues, [key, result]) => ({
+          ...resultValues,
+          [key]: result.getValueOrThrow(),
+        }),
+        {}
+      );
+
+      return Result.success(
+        values as Some<{ [K in keyof T]: ResultValueOf<T[K]> }>
+      );
     }
 
     const errorMessages = failedResults
-      .map((result) => result.getErrorOrThrow())
+      .map(([key, result]) => `${key}: ${result.getErrorOrThrow()}`)
       .join(', ');
 
     return Result.failure(errorMessages);
