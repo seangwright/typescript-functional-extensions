@@ -2,7 +2,7 @@
 
 [![NPM](https://nodei.co/npm/typescript-functional-extensions.png)](https://nodei.co/npm/typescript-functional-extensions/)
 
-A TypeScript implementation of <https://github.com/vkhorikov/CSharpFunctionalExtensions>, including `Maybe` and `Result` monads.
+A TypeScript implementation of the C# library [CSharpFunctionalExtensions](https://github.com/vkhorikov/CSharpFunctionalExtensions), including synchronous and asynchronous `Maybe` and `Result` monads.
 
 ## Further Reading
 

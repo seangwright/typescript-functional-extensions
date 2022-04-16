@@ -1,0 +1,41 @@
+name: 'CI: Test and Build'
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '**.ts'
+      - '**.json'
+      - '**.js'
+  pull_request:
+    branches: [main]
+    paths:
+      - '**.ts'
+      - '**.json'
+      - '**.js'
+
+jobs:
+  build:
+    name: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set Environment Variables
+        uses: ./.github/actions/set-env
+
+      - uses: actions/checkout@v2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Test library
+        run: npm test
+
+      - name: Build package
+        run: npm run build

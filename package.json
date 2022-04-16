@@ -1,7 +1,31 @@
 {
   "name": "typescript-functional-extensions",
-  "description": "A TypeScript implementation of https://github.com/vkhorikov/CSharpFunctionalExtensions",
+  "description": "A TypeScript implementation of Maybe and Result monads",
+  "keywords": [
+    "typescript",
+    "functional",
+    "monad",
+    "maybe",
+    "result",
+    "async"
+  ],
+  "homepage": "https://github.com/seangwright/typescript-functional-extensions#readme",
+  "bugs": {
+    "url": "https://github.com/seangwright/typescript-functional-extensions/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "github.com:seangwright/typescript-functional-extensions"
+  },
+  "license": "MIT",
+  "author": {
+    "name": "Sean G. Wright",
+    "url": "https://www.seangwright.me"
+  },
   "version": "1.1.0",
+  "engines": {
+    "node": ">=16.13.1"
+  },
   "main": "dist/cjs/index.js",
   "module": "dist/esm/index.js",
   "exports": {
@@ -23,14 +47,14 @@
   },
   "devDependencies": {
     "@babel/preset-typescript": "7.16.7",
-    "@types/jest": "27.4.0",
-    "cpy-cli": "3.1.1",
-    "jest": "27.4.7",
-    "prettier": "2.5.1",
+    "@types/jest": "27.4.1",
+    "cpy-cli": "4.1.0",
+    "jest": "27.5.1",
+    "prettier": "2.6.2",
     "trash-cli": "5.0.0",
-    "ts-jest": "27.1.2",
-    "ts-node": "^10.4.0",
+    "ts-jest": "27.1.4",
+    "ts-node": "10.7.0",
     "tslib": "2.3.1",
-    "typescript": "4.5.4"
+    "typescript": "4.6.3"
   }
 }
