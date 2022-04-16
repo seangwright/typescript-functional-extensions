@@ -19,6 +19,9 @@ jobs:
       - name: Set Environment Variables
         uses: ./.github/actions/set-env
 
+      - name: Set Package Version Environment Variable
+        uses: ./.github/actions/set-package-version
+
       - uses: actions/checkout@v2
 
       - name: Setup Node.js
@@ -27,7 +30,7 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
 
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --ignore-scripts
 
       - name: Test library
         run: npm test
@@ -35,23 +38,26 @@ jobs:
       - name: Build package
         run: npm run build
 
-      - name: Create PreRelease Artifact
-        run: npm pack prerelease-$GITHUB_RUN_NUMBER-$GITHUB_RUN_ATTEMPT
-
-      - name: 'Save prerelease artifact'
-        uses: actions/upload-artifact@v3
-        with:
-          name: prerelease
-          path: ./artifacts/prerelease/*
-
       - name: Create Release Artifact
-        run: npm pack ./artifacts/release
+        run: npm pack --pack-destination ./artifacts/release
 
       - name: 'Save release artifact'
         uses: actions/upload-artifact@v3
         with:
           name: release
           path: ./artifacts/release/*
+
+      - name: Set Prerelease Package Version
+        run: npm version ${{ env.PACKAGE_VERSION }}-prerelease.$GITHUB_RUN_NUMBER-$GITHUB_RUN_ATTEMPT
+
+      - name: Create PreRelease Artifact
+        run: npm pack --pack-destination ./artifacts/prerelease
+
+      - name: 'Save prerelease artifact'
+        uses: actions/upload-artifact@v3
+        with:
+          name: prerelease
+          path: ./artifacts/prerelease/*
 
   publishPreRelease:
     name: Publish PreRelease npm Package
@@ -65,7 +71,7 @@ jobs:
           name: prerelease
 
       - name: Publish npm Package
-        run: npm publish *.tgz
+        run: npm publish *.tgz --ignore-scripts
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_API_KEY }}
 
@@ -81,6 +87,6 @@ jobs:
           name: release
 
       - name: Publish npm Package
-        run: npm publish *.tgz
+        run: npm publish *.tgz --ignore-scripts
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_API_KEY }}
