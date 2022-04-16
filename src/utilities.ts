@@ -56,8 +56,8 @@ export type ResultMatcherNoReturn<TValue, TError> = {
   failure: ActionOfT<TError>;
 };
 
-export type ResultValueOf<T> = T extends Result<infer ResultValue>
-  ? ResultValue
+export type ResultValueOf<T> = T extends Result<infer TResultValue>
+  ? TResultValue
   : unknown;
 
 function identity<T>(x: T): T {
