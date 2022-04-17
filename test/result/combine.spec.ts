@@ -46,7 +46,7 @@ describe('Result', () => {
       const failure_2_message = '2nd Error';
       const failure_2 = Result.failure(failure_2_message);
 
-      const expected_message = `failure_1: ${failure_1_message}, failure_2: ${failure_2_message}`;
+      const expected_message = `${failure_1_message}, ${failure_2_message}`;
 
       const result = Result.combine({ failure_1, failure_2 });
 

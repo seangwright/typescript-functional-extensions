@@ -60,7 +60,7 @@ export class Result<TValue = Unit, TError = string> {
     }
 
     const errorMessages = failedResults
-      .map(([key, result]) => `${key}: ${result.getErrorOrThrow()}`)
+      .map(([, result]) => result.getErrorOrThrow())
       .join(', ');
 
     return Result.failure(errorMessages);
