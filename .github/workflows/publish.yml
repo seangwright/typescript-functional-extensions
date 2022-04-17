@@ -38,6 +38,13 @@ jobs:
       - name: Build package
         run: npm run build
 
+      - name: Create Artifact Directories
+        run: |
+          mkdir ./artifacts
+          mkdir ./artifacts/prerelease
+          mkdir ./artifacts/release
+        shell: bash
+
       - name: Create Release Artifact
         run: npm pack --pack-destination ./artifacts/release
 
@@ -48,7 +55,7 @@ jobs:
           path: ./artifacts/release/*
 
       - name: Set Prerelease Package Version
-        run: npm version ${{ env.PACKAGE_VERSION }}-prerelease.$GITHUB_RUN_NUMBER-$GITHUB_RUN_ATTEMPT
+        run: npm version --no-git-tag-version ${{ env.PACKAGE_VERSION }}-prerelease.$GITHUB_RUN_NUMBER-$GITHUB_RUN_ATTEMPT
 
       - name: Create PreRelease Artifact
         run: npm pack --pack-destination ./artifacts/prerelease

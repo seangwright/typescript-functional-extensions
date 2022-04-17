@@ -2,15 +2,9 @@ name: 'Set package.json version environment variable'
 
 description: 'Sets the current npm package version a workflow'
 
-inputs:
-  envVariable:
-    description: 'Name of the environment variable to store the npm package version number under.'
-    required: false
-    default: PACKAGE_VERSION
-
 runs:
   using: 'composite'
   steps:
     - run: |
-        echo "${{ PACKAGE_VERSION }}=$(node -p \"require('./package.json').version\")" > $GITHUB_ENV
+        echo PACKAGE_VERSION=`node -p "require('./package.json').version"` >> $GITHUB_ENV
       shell: bash
