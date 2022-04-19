@@ -53,13 +53,10 @@ export class Result<TValue = Unit, TError = string> {
     );
 
     if (failedResults.length === 0) {
-      const values = succeededResults.reduce(
-        (resultValues, [key, result]) => ({
-          ...resultValues,
-          [key]: result.getValueOrThrow(),
-        }),
-        {}
-      );
+      const values = succeededResults.reduce((resultValues, [key, result]) => {
+        resultValues[key] = result.getValueOrThrow();
+        return resultValues;
+      }, {} as { [key: string]: unknown });
 
       return Result.success(
         values as Some<{ [K in keyof T]: ResultValueOf<T[K]> }>
