@@ -8,7 +8,7 @@ describe('Result', () => {
 
       const result = Result.combine({ success, failure });
 
-      expect(result.isFailure).toBe(true);
+      expect(result).toFailWith('1st Error');
     });
 
     test('succeeds if one results succeed', () => {
@@ -16,7 +16,7 @@ describe('Result', () => {
 
       const result = Result.combine({ success });
 
-      expect(result.isSuccess).toBe(true);
+      expect(result).toSucceed();
     });
 
     test('succeeds if all results succeed', () => {
@@ -25,7 +25,7 @@ describe('Result', () => {
 
       const result = Result.combine({ success_1, success_2 });
 
-      expect(result.isSuccess).toBe(true);
+      expect(result).toSucceed();
     });
 
     test('yields all result values on success', () => {
@@ -34,10 +34,10 @@ describe('Result', () => {
 
       const result = Result.combine({ success_1, success_2 });
 
-      const values = result.getValueOrThrow();
-
-      expect(values.success_1).toBe(1);
-      expect(values.success_2).toEqual({ name: 'Arthur' });
+      expect(result).toSucceedWith({
+        success_1: 1,
+        success_2: { name: 'Arthur' },
+      });
     });
 
     test('concatenates error messages', () => {
@@ -46,11 +46,9 @@ describe('Result', () => {
       const failure_2_message = '2nd Error';
       const failure_2 = Result.failure(failure_2_message);
 
-      const expected_message = `${failure_1_message}, ${failure_2_message}`;
-
       const result = Result.combine({ failure_1, failure_2 });
 
-      expect(result.getErrorOrThrow()).toBe(expected_message);
+      expect(result).toFailWith(`${failure_1_message}, ${failure_2_message}`);
     });
   });
 });
