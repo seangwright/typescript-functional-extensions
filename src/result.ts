@@ -18,9 +18,16 @@ import {
   PredicateOfT,
   ResultMatcher,
   ResultMatcherNoReturn,
-  ResultValueOf,
   Some,
 } from './utilities';
+
+/**
+ * Allows to extract the Value of the given Result-Type
+ * e.g. ResultValueOf<Result<string>> => string
+ */
+export type ResultValueOf<T> = T extends Result<infer TResultValue>
+  ? TResultValue
+  : unknown;
 
 /**
  * Represents a successful or failed operation

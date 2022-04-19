@@ -1,5 +1,3 @@
-import { Result } from './result';
-
 export type FunctionOfTtoK<T, K> = (v: T) => K;
 export type AsyncFunctionOfTtoK<T, K> = (v: T) => Promise<K>;
 export type FunctionOfT<T> = () => T;
@@ -55,10 +53,6 @@ export type ResultMatcherNoReturn<TValue, TError> = {
   success: ActionOfT<TValue>;
   failure: ActionOfT<TError>;
 };
-
-export type ResultValueOf<T> = T extends Result<infer TResultValue>
-  ? TResultValue
-  : unknown;
 
 function identity<T>(x: T): T {
   return x;
