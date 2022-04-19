@@ -1,6 +1,7 @@
 import { Maybe } from '@/src/maybe';
 import { Result } from '@/src/result';
 import { FunctionOfT, isDefined, isFunction } from '@/src/utilities';
+import { equals } from '@jest/expect-utils';
 
 expect.extend({
   toHaveNoValue<TValue>(received: Maybe<TValue>): MatchResponse {
@@ -25,7 +26,7 @@ expect.extend({
 
     const value = received.getValueOrThrow();
 
-    return value === expectedValue
+    return equals(value, expectedValue)
       ? r(
           true,
           `expected [${received}] to have a value [${expectedValue}], but it has a value of [${value}]`
@@ -66,17 +67,15 @@ expect.extend({
 
     const value = received.getValueOrThrow();
 
-    if (expectedValue === value) {
-      return r(
-        true,
-        `expected [${received}] to be successful but not have value [${expectedValue}] but it did`
-      );
-    }
-
-    return r(
-      false,
-      `expected [${received}] to have value [${expectedValue}], but found value [${value}]`
-    );
+    return equals(expectedValue, value)
+      ? r(
+          true,
+          `expected [${received}] to be successful but not have value [${expectedValue}] but it did`
+        )
+      : r(
+          false,
+          `expected [${received}] to have value [${expectedValue}], but found value [${value}]`
+        );
   },
   toFail<TValue, TError>(received: Result<TValue, TError>) {
     return received.isSuccess

@@ -22,9 +22,54 @@ import {
 } from './utilities';
 
 /**
+ * Allows to extract the Value of the given Result-Type
+ * e.g. ResultValueOf<Result<string>> => string
+ */
+export type ResultValueOf<T> = T extends Result<infer TResultValue>
+  ? TResultValue
+  : unknown;
+
+/**
  * Represents a successful or failed operation
  */
 export class Result<TValue = Unit, TError = string> {
+  /**
+   * Combines several results (and any error messages) into a single result.
+   * The returned result will be a failure if any of the input results are failures.
+   *
+   * @param results The Results to be combined.
+   * @returns A Result that is a success when all the input results are also successes.
+   */
+  static combine<T extends Record<string, Result<unknown>>>(
+    results: T
+  ): Result<{ [K in keyof T]: ResultValueOf<T[K]> }> {
+    const resultEntries = Object.entries(results);
+
+    const failedResults = resultEntries.filter(
+      ([, result]) => result.isFailure
+    );
+    const succeededResults = resultEntries.filter(
+      ([, result]) => result.isSuccess
+    );
+
+    if (failedResults.length === 0) {
+      const values = succeededResults.reduce((resultValues, [key, result]) => {
+        resultValues[key] = result.getValueOrThrow();
+        return resultValues;
+      }, {} as { [key: string]: unknown });
+
+      return Result.success(
+        values as Some<{ [K in keyof T]: ResultValueOf<T[K]> }>
+      );
+    }
+
+    const errorMessages = failedResults
+      .map(([, result]) => result.getErrorOrThrow())
+      .join(', ');
+
+    return Result.failure(errorMessages);
+  }
+
   /**
    * Creates a new successful Result with a string error type
    * and Unit value type
