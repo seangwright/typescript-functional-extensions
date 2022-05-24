@@ -55,7 +55,7 @@ describe('Result', () => {
 
   describe('hasError', () => {
     test('grants access to error when Result is in error state', () => {
-      const error = 'Alan Turing';
+      const error = 'Ouch!';
       const sut = Result.failure(error);
 
       if (sut.hasError()) {
