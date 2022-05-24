@@ -279,7 +279,7 @@ export class Result<TValue = Unit, TError = string> {
     return this.isSuccess;
   }
 
-  hasFailure(): this is Result<TValue> & { failure: TError } {
+  hasError(): this is Result<TValue> & { error: TError } {
     return !this.isSuccess;
   }
 
@@ -294,7 +294,7 @@ export class Result<TValue = Unit, TError = string> {
   protected get value(): TValue {
     return this.state.value as TValue;
   }
-  protected get failure(): TError {
+  protected get error(): TError {
     return this.state.error as TError;
   }
 

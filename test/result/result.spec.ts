@@ -58,8 +58,8 @@ describe('Result', () => {
       const error = 'Alan Turing';
       const sut = Result.failure(error);
 
-      if (sut.hasFailure()) {
-        expect(sut.failure).toBe(error);
+      if (sut.hasError()) {
+        expect(sut.error).toBe(error);
       }
     });
   });
