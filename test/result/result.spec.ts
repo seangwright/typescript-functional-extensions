@@ -42,6 +42,28 @@ describe('Result', () => {
     });
   });
 
+  describe('hasValue', () => {
+    test('grants access to value when Result is in success state', () => {
+      const value = 'Alan Turing';
+      const sut = Result.success(value);
+
+      if (sut.hasValue()) {
+        expect(sut.value).toBe(value);
+      }
+    });
+  });
+
+  describe('hasError', () => {
+    test('grants access to error when Result is in error state', () => {
+      const error = 'Alan Turing';
+      const sut = Result.failure(error);
+
+      if (sut.hasFailure()) {
+        expect(sut.failure).toBe(error);
+      }
+    });
+  });
+
   describe('successIf', () => {
     describe('condition', () => {
       test('creates a successful Result if the condition is true', () => {

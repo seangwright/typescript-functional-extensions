@@ -275,6 +275,14 @@ export class Result<TValue = Unit, TError = string> {
     return !this.isSuccess;
   }
 
+  hasValue(): this is Result<TValue> & { value: TValue } {
+    return this.isSuccess;
+  }
+
+  hasFailure(): this is Result<TValue> & { failure: TError } {
+    return !this.isSuccess;
+  }
+
   /**
    * The internal state of the Result
    */
@@ -282,6 +290,13 @@ export class Result<TValue = Unit, TError = string> {
     value: undefined,
     error: undefined,
   };
+
+  protected get value(): TValue {
+    return this.state.value as TValue;
+  }
+  protected get failure(): TError {
+    return this.state.error as TError;
+  }
 
   /**
    * Creates a new Result instance in a guaranteed valid state
