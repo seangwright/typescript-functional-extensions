@@ -30,6 +30,20 @@ export type ResultValueOf<T> = T extends Result<infer TResultValue>
   : unknown;
 
 /**
+ * Represents a successful Result operation.
+ */
+type ResultSuccess<TValue> = Result<TValue> & {
+  value: TValue;
+};
+
+/**
+ * Represents a failed Result operation.
+ */
+type ResultFailure<TValue, TError> = Result<TValue> & {
+  error: TError;
+};
+
+/**
  * Represents a successful or failed operation
  */
 export class Result<TValue = Unit, TError = string> {
@@ -275,11 +289,33 @@ export class Result<TValue = Unit, TError = string> {
     return !this.isSuccess;
   }
 
-  hasValue(): this is Result<TValue> & { value: TValue } {
+  /**
+   * Yields value if the result operation succeeded.
+   * Hint: Use hasValue() upfront to be sure that result operation succeeded.
+   */
+  protected get value() {
+    return this.state.value;
+  }
+
+  /**
+   * Yields error if the result operation failed.
+   * Hint: Use hasError() upfront to be sure that result operation failed.
+   */
+  protected get error() {
+    return this.state.error;
+  }
+
+  /**
+   * Checks if result operation succeeded.
+   */
+  hasValue(): this is ResultSuccess<TValue> {
     return this.isSuccess;
   }
 
-  hasError(): this is Result<TValue> & { error: TError } {
+  /**
+   * Checks if result operation failed.
+   */
+  hasError(): this is ResultFailure<TValue, TError> {
     return !this.isSuccess;
   }
 
@@ -290,13 +326,6 @@ export class Result<TValue = Unit, TError = string> {
     value: undefined,
     error: undefined,
   };
-
-  protected get value(): TValue {
-    return this.state.value as TValue;
-  }
-  protected get error(): TError {
-    return this.state.error as TError;
-  }
 
   /**
    * Creates a new Result instance in a guaranteed valid state
