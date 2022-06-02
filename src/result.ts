@@ -30,6 +30,20 @@ export type ResultValueOf<T> = T extends Result<infer TResultValue>
   : unknown;
 
 /**
+ * Represents a successful Result operation.
+ */
+type ResultSuccess<TValue> = Result<TValue> & {
+  value: TValue;
+};
+
+/**
+ * Represents a failed Result operation.
+ */
+type ResultFailure<TValue, TError> = Result<TValue> & {
+  error: TError;
+};
+
+/**
  * Represents a successful or failed operation
  */
 export class Result<TValue = Unit, TError = string> {
@@ -272,6 +286,36 @@ export class Result<TValue = Unit, TError = string> {
    * True if the result operation failed.
    */
   get isFailure(): boolean {
+    return !this.isSuccess;
+  }
+
+  /**
+   * Yields value if the result operation succeeded.
+   * Hint: Use hasValue() upfront to be sure that result operation succeeded.
+   */
+  protected get value() {
+    return this.state.value;
+  }
+
+  /**
+   * Yields error if the result operation failed.
+   * Hint: Use hasError() upfront to be sure that result operation failed.
+   */
+  protected get error() {
+    return this.state.error;
+  }
+
+  /**
+   * Checks if result operation succeeded.
+   */
+  hasValue(): this is ResultSuccess<TValue> {
+    return this.isSuccess;
+  }
+
+  /**
+   * Checks if result operation failed.
+   */
+  hasError(): this is ResultFailure<TValue, TError> {
     return !this.isSuccess;
   }
 
