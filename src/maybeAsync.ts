@@ -76,6 +76,54 @@ export class MaybeAsync<TValue> {
     this.value = value;
   }
 
+  /**
+   * Returns the value of the MaybeAsync if it has one,
+   * and the default value if there is none
+   * @param defaultValue
+   */
+  getValueOrDefault(defaultValue: Some<TValue>): Promise<TValue>;
+  /**
+   * Returns the value of the MaybeAsync if it has one,
+   * and returns the result of the factory function if
+   * there is none
+   * @param factory
+   */
+  getValueOrDefault(factory: FunctionOfT<Some<TValue>>): Promise<TValue>;
+  getValueOrDefault(
+    defaultValueOrFactory: Some<TValue> | FunctionOfT<Some<TValue>>
+  ): Promise<TValue> {
+    if (isDefined(this.value)) {
+      return this.value.then((m) => {
+        if (isFunction(defaultValueOrFactory)) {
+          return m.getValueOrDefault(defaultValueOrFactory());
+        } else {
+          return m.getValueOrDefault(defaultValueOrFactory);
+        }
+      });
+    }
+
+    if (isFunction(defaultValueOrFactory)) {
+      return Promise.resolve(defaultValueOrFactory());
+    }
+
+    return Promise.resolve(defaultValueOrFactory);
+  }
+
+  /**
+   * Returns the value of the MaybeAsync and throws
+   * and returns a rejected Promise is there is none
+   * @returns
+   */
+  getValueOrThrow(): Promise<Some<TValue>> {
+    if (isDefined(this.value)) {
+      return this.value.then((m) => {
+        return m.getValueOrThrow();
+      });
+    }
+
+    return Promise.reject('No value');
+  }
+
   pipe(): MaybeAsync<TValue>;
   pipe<A>(op1: MaybeAsyncOpFn<TValue, A>): MaybeAsync<A>;
   pipe<A, B>(

@@ -97,4 +97,45 @@ describe('MaybeAsync', () => {
       expect(sut.hasNoValue).resolves.toBe(true);
     });
   });
+
+  describe('getValueOrDefault', () => {
+    test('returns the inner value for a MaybeAsync with a value', () => {
+      const value = 1;
+      const defaultValue = 10;
+      const sut = MaybeAsync.some(value);
+
+      expect(sut.getValueOrDefault(defaultValue)).resolves.toBe(value);
+    });
+
+    test('returns the default value for a MaybeAsync with no value', () => {
+      const defaultValue = 10;
+      const sut = MaybeAsync.none<number>();
+
+      expect(sut.getValueOrDefault(defaultValue)).resolves.toBe(defaultValue);
+    });
+
+    test('returns the result of the default value creator for a MaybeAsync with no value', () => {
+      const defaultValueCreator = () => 10;
+      const sut = MaybeAsync.none<number>();
+
+      expect(sut.getValueOrDefault(defaultValueCreator)).resolves.toBe(
+        defaultValueCreator()
+      );
+    });
+  });
+
+  describe('getValueOrThrow', () => {
+    test('returns the inner value for a MaybeAsync with a value', () => {
+      const value = 1;
+      const sut = MaybeAsync.some(value);
+
+      expect(sut.getValueOrThrow()).resolves.toBe(value);
+    });
+
+    test('throw an error for a MaybeAsync with no value', () => {
+      const sut = MaybeAsync.none();
+
+      expect(() => sut.getValueOrThrow()).rejects.toThrowError('No value');
+    });
+  });
 });
