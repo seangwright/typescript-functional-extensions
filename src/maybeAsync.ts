@@ -11,6 +11,7 @@ import {
   isPromise,
   MaybeMatcher,
   MaybeMatcherNoReturn,
+  None,
   pipeFromArray,
   Some,
 } from './utilities';
@@ -26,10 +27,12 @@ export class MaybeAsync<TValue> {
    */
   static from<TValue>(maybe: Maybe<TValue>): MaybeAsync<TValue>;
   static from<TValue>(maybePromise: Promise<Maybe<TValue>>): MaybeAsync<TValue>;
-  static from<TValue>(promise: Promise<Some<TValue>>): MaybeAsync<TValue>;
+  static from<TValue>(
+    promise: Promise<Some<TValue> | None>
+  ): MaybeAsync<TValue>;
   static from<TValue>(
     valueOrPromiseOrMaybePromise:
-      | Promise<Some<TValue> | Maybe<TValue>>
+      | Promise<Some<TValue> | None | Maybe<TValue>>
       | Maybe<TValue>
   ): MaybeAsync<TValue> {
     if (isPromise(valueOrPromiseOrMaybePromise)) {

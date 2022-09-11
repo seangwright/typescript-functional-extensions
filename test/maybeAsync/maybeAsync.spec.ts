@@ -47,6 +47,16 @@ describe('MaybeAsync', () => {
 
       await expect(sut.toPromise()).rejects.toMatch(error);
     });
+
+    test('constructs with a Promise undefined value', async () => {
+      const sut = MaybeAsync.from(
+        Promise.resolve<string | undefined>(undefined)
+      );
+
+      const innerMaybe = await sut.toPromise();
+
+      expect(innerMaybe).toHaveNoValue();
+    });
   });
 
   describe('some', () => {
