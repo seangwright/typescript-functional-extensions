@@ -54,10 +54,6 @@ export type ResultMatcherNoReturn<TValue, TError> = {
   failure: ActionOfT<TError>;
 };
 
-function identity<T>(x: T): T {
-  return x;
-}
-
 /**
  * Sourced from https://github.com/ReactiveX/rxjs/blob/7268bd31d1cb30cf01a1a69a7b14458e15b76b58/src/internal/util/pipe.ts
  * @param fns
@@ -67,7 +63,7 @@ export function pipeFromArray<T, R>(
   fns: Array<FunctionOfTtoK<T, R>>
 ): FunctionOfTtoK<T, R> {
   if (fns.length === 0) {
-    return identity as FunctionOfTtoK<any, any>;
+    return noop as FunctionOfTtoK<any, any>;
   }
 
   if (fns.length === 1) {
@@ -80,4 +76,12 @@ export function pipeFromArray<T, R>(
       input as any
     );
   };
+}
+
+export function noop(): void;
+export function noop<T>(value: Some<T>): Some<T>;
+export function noop<T>(value?: Some<T>): void | Some<T> {
+  if (value) {
+    return value;
+  }
 }
