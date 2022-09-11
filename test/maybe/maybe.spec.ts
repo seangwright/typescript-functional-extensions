@@ -30,8 +30,7 @@ describe('Maybe', () => {
     });
 
     test('creates a Maybe with no value when supplied undefined', () => {
-      const value: string | undefined = undefined;
-      const sut = Maybe.from<string>(value);
+      const sut = Maybe.from<string>(undefined);
 
       expect(sut).toHaveNoValue();
     });
