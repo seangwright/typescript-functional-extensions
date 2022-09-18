@@ -13,6 +13,10 @@ A TypeScript implementation of the C# library [CSharpFunctionalExtensions](https
 
 ## How to Use
 
+```bash
+npm i typescript-functional-extensions
+```
+
 ### Core Monads
 
 ```typescript
@@ -199,3 +203,12 @@ console.log(result.getErrorOrThrow()); // 'Could not retrieve inventory: connect
 ```
 
 See more examples of Maybe [in the docs](./docs/resultAsync.md) or [in the tests](./test/resultAsync).
+
+## Contributing
+
+To build this project, you must have v16.17.0 or higher
+of the [Node.js](https://nodejs.org/dist/v16.17.0/node-v16.17.0-x64.msi) installed.
+
+If you've found a bug or have a feature request, please [open an issue](https://github.com/seangwright/typescript-functional-extensions/issues/new) on GitHub.
+
+If you'd like to make a contribution, you can create a [Pull Request](https://github.com/seangwright/typescript-functional-extensions/compare) on GitHub.

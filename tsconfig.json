@@ -1,8 +1,7 @@
 {
-  "extends": "./tsconfig.base.json",
+  "extends": "./tsconfig.esm.json",
+  "include": ["**/*.ts", "**/*.d.ts"],
   "compilerOptions": {
-    "module": "ES2015",
-    "outDir": "dist/esm",
-    "target": "ES2015"
+    "types": ["vitest/globals"]
   }
 }

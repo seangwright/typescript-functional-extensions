@@ -1,10 +1,10 @@
 import { Maybe } from '@/src/maybe';
 import { Result } from '@/src/result';
 import { FunctionOfT, isDefined, isFunction } from '@/src/utilities';
-import { equals } from '@jest/expect-utils';
+import { expect } from 'vitest';
 
 expect.extend({
-  toHaveNoValue<TValue>(received: Maybe<TValue>): MatchResponse {
+  toHaveNoValue<TValue>(received: Maybe<TValue>) {
     return received.hasNoValue
       ? r(
           true,
@@ -26,7 +26,8 @@ expect.extend({
 
     const value = received.getValueOrThrow();
 
-    return equals(value, expectedValue)
+    // See: https://github.com/vitest-dev/vitest/issues/2054
+    return (this as any).equals(value, expectedValue)
       ? r(
           true,
           `expected [${received}] to have a value [${expectedValue}], but it has a value of [${value}]`
@@ -51,10 +52,10 @@ expect.extend({
     received: Result<TValue, TError>,
     expectedValue?: TValue
   ): MatchResponse {
-    if (received.isFailure) {
+    if (received.hasError()) {
       return r(
         false,
-        `expected [${received}] to be successful, but it failed with error [${received.getErrorOrThrow()}]`
+        `expected [${received}] to be successful, but it failed with error [${received.error}]`
       );
     }
 
@@ -67,7 +68,8 @@ expect.extend({
 
     const value = received.getValueOrThrow();
 
-    return equals(expectedValue, value)
+    // See: https://github.com/vitest-dev/vitest/issues/2054
+    return (this as any).equals(expectedValue, value)
       ? r(
           true,
           `expected [${received}] to be successful but not have value [${expectedValue}] but it did`
@@ -108,7 +110,8 @@ expect.extend({
 
     const error = received.getErrorOrThrow();
 
-    if (expectedError === error) {
+    // See: https://github.com/vitest-dev/vitest/issues/2054F
+    if ((this as any).equals(error, expectedError)) {
       return r(
         true,
         `expected [${received}] to be failure but not have error [${expectedError}] but it did`
