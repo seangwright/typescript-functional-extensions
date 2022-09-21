@@ -13,8 +13,8 @@ describe('Result', () => {
         map((n) => `Calculation: ${n}`)
       );
 
-      expect(sut).toHaveValue(1);
-      expect(result).toHaveValue('Calculation: 4');
+      expect(sut).toSucceedWith(1);
+      expect(result).toSucceedWith('Calculation: 4');
     });
 
     test('handles side-effect operator functions', () => {
@@ -29,7 +29,7 @@ describe('Result', () => {
         tap((n) => callCount++)
       );
 
-      expect(result).toHaveValue(1);
+      expect(result).toSucceedWith(1);
       expect(callCount).toBe(4);
     });
 
@@ -44,7 +44,7 @@ describe('Result', () => {
         .pipe(asyncMap((n) => n + 3))
         .toPromise();
 
-      expect(result).toHaveValue(7);
+      expect(result).toSucceedWith(7);
     });
   });
 });

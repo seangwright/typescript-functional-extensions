@@ -4,7 +4,13 @@ import { FunctionOfT, isDefined, isFunction } from '@/src/utilities';
 import { expect } from 'vitest';
 
 expect.extend({
-  toHaveNoValue<TValue>(received: Maybe<TValue>) {
+  toHaveNoValue(received: unknown) {
+    if (!(received instanceof Maybe)) {
+      throw new Error(
+        `${received} must be an instance of Maybe to use this assertion`
+      );
+    }
+
     return received.hasNoValue
       ? r(
           true,
@@ -13,10 +19,13 @@ expect.extend({
         )
       : r(false, `expected ${received} to have a value, but it has none`);
   },
-  toHaveValue<TValue>(
-    received: Maybe<TValue>,
-    expectedValue: TValue
-  ): MatchResponse {
+  toHaveValue(received: unknown, expectedValue: unknown): MatchResponse {
+    if (!(received instanceof Maybe)) {
+      throw new Error(
+        `${received} must be an instance of Maybe to use this assertion`
+      );
+    }
+
     if (received.hasNoValue) {
       return r(
         false,
@@ -26,8 +35,7 @@ expect.extend({
 
     const value = received.getValueOrThrow();
 
-    // See: https://github.com/vitest-dev/vitest/issues/2054
-    return (this as any).equals(value, expectedValue)
+    return this.equals(value, expectedValue)
       ? r(
           true,
           `expected [${received}] to have a value [${expectedValue}], but it has a value of [${value}]`
@@ -37,7 +45,13 @@ expect.extend({
           `expected [${received}] to not have a value [${expectedValue}] but id does`
         );
   },
-  toSucceed<TValue, TError>(received: Result<TValue, TError>): MatchResponse {
+  toSucceed(received: unknown): MatchResponse {
+    if (!(received instanceof Result)) {
+      throw new Error(
+        `${received} must be an instance of Result to use this assertion`
+      );
+    }
+
     return received.isFailure
       ? r(
           false,
@@ -48,10 +62,13 @@ expect.extend({
           `expected [${received}] to be a failure, but it succeeded with value [${received.getValueOrThrow()}]`
         );
   },
-  toSucceedWith<TValue, TError>(
-    received: Result<TValue, TError>,
-    expectedValue?: TValue
-  ): MatchResponse {
+  toSucceedWith(received: unknown, expectedValue?: unknown): MatchResponse {
+    if (!(received instanceof Result)) {
+      throw new Error(
+        `${received} must be an instance of Result to use this assertion`
+      );
+    }
+
     if (received.hasError()) {
       return r(
         false,
@@ -68,8 +85,7 @@ expect.extend({
 
     const value = received.getValueOrThrow();
 
-    // See: https://github.com/vitest-dev/vitest/issues/2054
-    return (this as any).equals(expectedValue, value)
+    return this.equals(expectedValue, value)
       ? r(
           true,
           `expected [${received}] to be successful but not have value [${expectedValue}] but it did`
@@ -79,7 +95,13 @@ expect.extend({
           `expected [${received}] to have value [${expectedValue}], but found value [${value}]`
         );
   },
-  toFail<TValue, TError>(received: Result<TValue, TError>) {
+  toFail(received: unknown) {
+    if (!(received instanceof Result)) {
+      throw new Error(
+        `${received} must be an instance of Result to use this assertion`
+      );
+    }
+
     return received.isSuccess
       ? r(
           false,
@@ -90,10 +112,13 @@ expect.extend({
           `expected [${received}] to be successful, but it failed with error [${received.getErrorOrThrow()}]`
         );
   },
-  toFailWith<TValue, TError>(
-    received: Result<TValue, TError>,
-    expectedError: TError
-  ): MatchResponse {
+  toFailWith(received: unknown, expectedError: unknown): MatchResponse {
+    if (!(received instanceof Result)) {
+      throw new Error(
+        `${received} must be an instance of Result to use this assertion`
+      );
+    }
+
     if (received.isSuccess) {
       return r(
         false,
@@ -110,8 +135,7 @@ expect.extend({
 
     const error = received.getErrorOrThrow();
 
-    // See: https://github.com/vitest-dev/vitest/issues/2054F
-    if ((this as any).equals(error, expectedError)) {
+    if (this.equals(error, expectedError)) {
       return r(
         true,
         `expected [${received}] to be failure but not have error [${expectedError}] but it did`

@@ -21,7 +21,7 @@ describe('ResultAsync', () => {
         )
         .toPromise();
 
-      expect(innerResult).toHaveValue('Calculation: 4');
+      expect(innerResult).toSucceedWith('Calculation: 4');
     });
 
     test('handles side-effect operator functions', async () => {
@@ -38,7 +38,7 @@ describe('ResultAsync', () => {
         )
         .toPromise();
 
-      expect(innerResult).toHaveValue(1);
+      expect(innerResult).toSucceedWith(1);
       expect(callCount).toBe(4);
     });
   });
