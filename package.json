@@ -43,19 +43,22 @@
     "build": "tsc -p tsconfig.json && tsc -p tsconfig.cjs.json",
     "postbuild": "cpy package.cjs.json ./dist/cjs && cpy package.esm.json ./dist/esm",
     "test": "jest",
-    "test:watch": "jest --watch"
+    "test:watch": "jest --watch",
+    "report:size": "node ./scripts/dist-size.mjs"
   },
   "devDependencies": {
     "@babel/preset-typescript": "7.18.6",
     "@jest/expect-utils": "28.1.3",
     "@types/jest": "28.1.1",
     "cpy-cli": "4.2.0",
+    "gzip-size": "7.0.0",
     "jest": "28.1.3",
     "prettier": "2.7.1",
     "trash-cli": "5.0.0",
     "ts-jest": "28.0.8",
     "ts-node": "10.9.1",
     "tslib": "2.4.0",
-    "typescript": "4.8.3"
+    "typescript": "4.8.3",
+    "uglify-js": "3.17.1"
   }
 }
