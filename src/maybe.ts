@@ -21,7 +21,7 @@ import {
 } from './utilities';
 
 /**
- * Represents a value that might not exist
+ * Represents a value that might not exist. Undefined and null values are always represented as Maybe.none.
  */
 export class Maybe<TValue> {
   /**

@@ -11,194 +11,173 @@ A TypeScript implementation of the C# library [CSharpFunctionalExtensions](https
 - [Modeling Missing Data - The Maybe Monad](https://dev.to/seangwright/kentico-xperience-design-patterns-modeling-missing-data-the-maybe-monad-2c7i)
 - [Railway Oriented Programming](https://fsharpforfunandprofit.com/rop/)
 
+## How to Use
+
+### Core Monads
+
+```typescript
+import {
+  Maybe,
+  MaybeAsync,
+  Result,
+  ResultAsync,
+} from 'typescript-functional-extensions';
+```
+
+### Utilities
+
+```typescript
+import {
+  never,
+  isDefined,
+  isSome,
+  isNone,
+  isFunction,
+  isPromise,
+  noop,
+} from 'typescript-functional-extensions';
+```
+
+```typescript
+import {
+  zeroAsNone,
+  emptyStringAsNone,
+  emptyOrWhiteSpaceStringAsNone,
+} from 'typescript-functional-extensions';
+```
+
 ## Monads
 
-Below are the monads included in this package and examples of their use (more examples of all monads and their methods can be found in the library unit tests).
+Below are the monads included in this package and examples of their use.
+
+More examples of all monads and their methods can be found in the library unit tests or in the dedicated documentation files for each type.
 
 ### Maybe
 
-`Maybe` represents a value that might or might not exist.
-
-#### Some/None/From
+`Maybe` represents a value that might or might not exist. You can use it to declaratively describe a process (series of steps) without having to check if there is a value present.
 
 ```typescript
-const maybe = Maybe.some('apple');
-
-console.log(maybe.hasValue); // true
-console.log(maybe.hasNoValue); // false
-console.log(maybe.getValueOrDefault('banana')); // 'apple'
-console.log(maybe.getValueOrThrow()); // 'apple'
-```
-
-```typescript
-const maybe = Maybe.none();
-
-console.log(maybe.hasValue); // false
-console.log(maybe.hasNoValue); // true
-console.log(maybe.getValueOrDefault('banana')); // 'banana'
-console.log(maybe.getValueOrThrow()); // throws Error 'No value'
-```
-
-```typescript
-const maybe = Maybe.from(undefined);
-
-console.log(maybe.hasValue); // false
-console.log(maybe.hasNoValue); // true
-console.log(maybe.getValueOrDefault('banana')); // 'banana'
-console.log(maybe.getValueOrThrow()); // throws Error 'No value'
-```
-
-#### TryFirst
-
-```typescript
-const maybe = Maybe.tryFirst(['apple', 'banana']);
-
-console.log(maybe.getValueOrThrow()); // 'apple'
-```
-
-```typescript
-const maybe = Maybe.tryFirst(['apple', 'banana'], (fruit) => fruit.length > 6);
-
-console.log(maybe.getValueOrThrow()); // throws Error 'No value'
-```
-
-#### TryLast
-
-```typescript
-const maybe = Maybe.tryLast(
-  ['apple', 'banana', 'mango'],
-  (fruit) => fruit.length === 5
-);
-
-console.log(maybe.getValueOrThrow()); // 'mango'
-```
-
-```typescript
-const maybe = Maybe.tryLast(
-  ['apple', 'banana', 'mango'],
-  (fruit) => fruit === 'pear'
-);
-
-console.log(maybe.getValueOrThrow()); // throws Error 'No value'
-```
-
-#### Map
-
-```typescript
-const maybe = Maybe.some({ type: 'fruit', name: 'apple' })
-  .map(({ type }) => ({ type, name: 'banana' }))
-  .map((food) => food.name)
-  .map((name) => name.length);
-
-console.log(maybe.getValueOrThrow()); // 6
-```
-
-```typescript
-type Food = {
-  type: string;
-  name: string;
+type Employee = {
+  email: string;
+  firstName: string;
+  lastName: string;
+  manager: Employee | undefined;
 };
 
-const maybe = Maybe.none<Food>()
-  .map(({ type }) => ({ type, name: 'banana' }))
-  .map((food) => food.name)
-  .map((name) => name.length);
-
-console.log(maybe.getValueOrThrow()); // throws Error 'No value'
-```
-
-#### Match
-
-```typescript
-const maybe = Maybe.some({ type: 'fruit', name: 'apple' })
-  .map(({ type }) => ({ type, name: 'banana' }))
-  .map((food) => food.name)
-  .map((name) => name.length)
-  .match({
-    some: (number) => console.log(number),
-    none: () => console.log('None!'),
-  }); // 6
-```
-
-```typescript
-type Food = {
-  type: string;
-  name: string;
-};
-
-const maybe = Maybe.none<Food>()
-  .map(({ type }) => ({ type, name: 'banana' }))
-  .map((food) => food.name)
-  .map((name) => name.length)
-  .match({
-    some: (number) => console.log(number),
-    none: () => console.log('None!'),
-  }); // None!
-```
-
-#### Pipe
-
-```typescript
-// custom-operators.ts
-import { logger, LogLevel } from 'logger';
-
-export function log<TValue>(
-  messageCreator: FunctionOfTtoK<TValue, string>,
-  logLevel: LogLevel = 'debug'
-): MaybeOpFn<TValue, TValue> {
-  return (maybe) => {
-    if (maybe.hasValue) {
-      logger.log(messageCreator(maybe.getValueOrThrow()), logLevel);
-    } else {
-      logger.error('No value found!');
-    }
-
-    return maybe;
-  };
+function yourBusinessProcess(): Employee[] {
+  // ...
 }
 
-// app.ts
-import { log } from './custom-operators.ts';
+const employees = yourBusinessProcess();
 
-const maybe = Maybe.some('apple')
-  .pipe(log((f) => `My fruit is ${f}`, 'information'))
-  .map((f) => `${f} and banana`)
-  .pipe(log((f) => `Now I have ${f}`));
+Maybe.tryFirst(employees)
+  .tap(({ firstName, lastName, email }) =>
+    console.log(`Found Employee: ${firstName} ${lastName}, ${email}`))
+  .bind(employee =>
+    Maybe.from(employee.manager)
+      .or({
+        email: 'supervisor@business.com',
+        firstName: 'Company',
+        lastName: 'Supervisor',
+        manager: undefined
+      })
+      .map(manager => ({ manager, employee }))
+  )
+  .match({
+    some(attendees => scheduleMeeting(attendees.manager, attendees.employee)),
+    none(() => console.log(`The business process did not return any employees`))
+  });
 ```
+
+1. `tryFirst` finds the first employee in the array and wraps it in a `Maybe`. If the array is empty, a `Maybe` with no value is returned.
+1. `tap`'s callback is only called if an employee was found and logs out that employee's information.
+1. `bind`'s callback is only called if an employee was found and converts the `Maybe` wrapping it into to another `Maybe`.
+1. `from` wraps the employee's manager in a `Maybe`. If the employee has no manager, a `Maybe` with no value is returned.
+1. `or` supplies a fallback in the case that the employee has no manager so that as long as an employee was originally found, all the following operations will execute.
+1. `map` converts the manager to a new object which contains both the manager and employee.
+1. `match` executes its `some` function if an employee was originally found and that employee has a manager. Since we supplied a fallback manager with `or`, the `some` function of `match` will execute if we found an employee. The `none` function of `match` executes if we didn't find any employees.
+
+See more examples of `Maybe` [in the docs](./docs/maybe.md) or [in the tests](./test/maybe).
 
 ### MaybeAsync
 
 `MaybeAsync` represents a future value (`Promise`) that might or might not exist.
 
-```typescript
-function getFruit(day): Promise<string> {
-  return Promise.resolve('apple');
-}
+`MaybeAsync` works just like `Maybe`, but since it is asynchronous, its methods accept a `Promise<T>` in most cases and all of its value accessing methods/getters return a `Promise<T>`.
 
-const maybeAsync = MaybeAsync.from(getFruit());
-
-const maybe = maybeAsync.toPromise();
-
-console.log(maybe.getValueOrThrow()); // 'apple'
-```
+See more examples of `MaybeAsync` [in the docs](./docs/maybeAsync.md) or [in the tests](./test/maybeAsync).
 
 ### Result
 
-`Result` represents a successful or failed operation.
+`Result` represents a successful or failed operation. You can use it to declaratively define a process without needing to check if previous steps succeeded or failed. It can replace processes that use throwing errors and `try`/`catch` to control the flow of the application, or processes where errors and data are returned from every function.
 
 ```typescript
-const successfulResult = Result.success('apple');
+type Employee = {
+  id: number;
+  email: string;
+  firstName: string;
+  lastName: string;
+  managerId: number | undefined;
+};
 
-console.log(successfulResult.getValueOrThrow()); // 'apple'
+function getEmployee(employeeId): Employee | undefined {
+  const employee = getEmployee(employeeId);
 
-const failedResult = Result.failure('no fruit');
+  if (!employee) {
+    throw Error(`Could not find employee ${employeeId}!`);
+  }
 
-console.log(failedResult.getErrorOrThrow()); // 'no fruit'
+  return employee;
+}
+
+Result.try(
+  () => getEmployee(42),
+  (error) => `Retrieving the employee failed: ${error}`
+)
+  .ensure(
+    (employee) => employee.email.endsWith('@business.com'),
+    ({ firstName, lastName }) =>
+      `Employee ${firstName} ${lastName} is a contractor and not a full employee`
+  )
+  .bind(({ firstName, lastName, managerId }) =>
+    Maybe.from(managerId).toResult(
+      `Employee ${firstName} ${lastName} does not have a manager`
+    )
+  )
+  .map((managerId) => ({
+    managerId,
+    employeeFullName: `${firstName} ${lastName}`,
+  }))
+  .bind(({ managerId, employeeFullName }) =>
+    Result.try(
+      () => getEmployee(managerId),
+      (error) => `Retrieving the manager failed: ${error}`
+    ).map((manager) => ({ manager, employeeFullName }))
+  )
+  .match({
+    success: ({ manager: { email }, employeeFullName }) =>
+      sendReminder(email, `Remember to say hello to ${employeeFullName}`),
+    failure: (error) => sendSupervisorAlert(error),
+  });
 ```
+
+1. `try` executes the function to retrieve the employee, converting any thrown errors into a failed `Result` with the error message defined by the second parameter. If the employee is found, it returns a successful `Result`.
+1. `ensure`'s callback is only called if an employee was successfully found. It checks if the employee works for the company by looking at their email address. If the address doesn't end in `@business.com`, a failed `Result` is returned with the error message defined in the second parameter. If the check passes, the original successful `Result` is returned.
+1. `bind`'s callback is only called if the employee was found and works for the company. It converts the employee `Result` into another `Result`.
+1. `toResult` converts a missing `managerId` into a failed `Result`. If there is a `managerId` value, it's converted into a successful `Result`.
+1. `map`'s callback is only called if the `managerId` exists and converts the `managerId` into a new object to capture both the id and the employee's full name.
+1. `bind`'s callback is only called if the original employee was found and that employee had a `managerId`. It converts the id and employee name into a new `Result`.
+1. `try` now attempts to get the employee's manager and works the same as the first `try`.
+1. `map`'s callback is only called if the original employee was found, has a `managerId` and that manager was also found. It converts the manager returned by `try` to a new object capturing both the manager and employee's name.
+1. `match`'s `success` callback is only called if all the required information was retrieved and sends a reminder to the employee's manager. The `failure` callback is called if any of the required data could not be retrieved and sends an alert to the business supervisor with the error message.
+
+See more examples of `Result` [in the docs](./docs/result.md) or [in the tests](./test/result).
 
 ### ResultAsync
 
 `ResultAsync` represents a future result of an operation that either succeeds or fails.
+
+`ResultAsync` works just like `Result`, but since it is asynchronous, its methods accept a `Promise<T>` in most cases and all of its value accessing methods/getters return a `Promise<T>`.
 
 ```typescript
 function getLatestInventory(): Promise<{ apples: number }> {
@@ -216,5 +195,7 @@ const resultAsync = ResultAsync.from(async () => {
 
 const result = await resultAsync.toPromise();
 
-console.log(result.getErrorOrThrow()); // 'Could not retrieve inventory: connection failure
+console.log(result.getErrorOrThrow()); // 'Could not retrieve inventory: connection failure'
 ```
+
+See more examples of `ResultAsync` [in the docs](./docs/resultAsync.md) or [in the tests](./test/resultAsync).

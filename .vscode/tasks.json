@@ -2,43 +2,46 @@
   "version": "2.0.0",
   "tasks": [
     {
+      "label": "install",
       "type": "npm",
       "script": "install",
-      "group": "build",
       "problemMatcher": [],
-      "label": "install",
-      "detail": "install"
+      "detail": "Installs all dependencies"
     },
     {
+      "label": "test",
+      "dependsOn": ["install"],
       "type": "npm",
       "script": "test",
       "group": "test",
       "problemMatcher": [],
-      "label": "test",
-      "detail": "jest"
+      "detail": "Runs the Jest tests"
     },
     {
+      "label": "test - watch",
+      "dependsOn": ["install"],
       "type": "npm",
       "script": "test:watch",
       "group": "test",
       "problemMatcher": [],
-      "label": "test - watch",
-      "detail": "jest"
+      "detail": "Runs the Jest tests in watch mode"
     },
     {
+      "label": "typescript - build",
+      "dependsOn": ["install"],
       "type": "npm",
       "script": "build",
       "group": "build",
       "problemMatcher": [],
-      "label": "npm: build",
-      "detail": "tsc"
+      "detail": "Runs the TypeScript compilation"
     },
     {
+      "label": "typescript - watch",
+      "dependsOn": ["install"],
       "type": "npm",
       "script": "start",
       "problemMatcher": [],
-      "label": "npm: start",
-      "detail": "tsc --watch"
+      "detail": "Runs the TypeScript compilation in watch mode"
     }
   ]
 }
