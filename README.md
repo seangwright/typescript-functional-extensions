@@ -90,14 +90,14 @@ Maybe.tryFirst(employees)
 ```
 
 1. `tryFirst` finds the first employee in the array and wraps it in a `Maybe`. If the array is empty, a `Maybe` with no value is returned.
-1. `tap`'s callback is only called if an employee was found and logs out that employees' information.
+1. `tap`'s callback is only called if an employee was found and logs out that employee's information.
 1. `bind`'s callback is only called if an employee was found and converts the `Maybe` wrapping it into to another `Maybe`.
 1. `from` wraps the employee's manager in a `Maybe`. If the employee has no manager, a `Maybe` with no value is returned.
 1. `or` supplies a fallback in the case that the employee has no manager so that as long as an employee was originally found, all the following operations will execute.
 1. `map` converts the manager to a new object which contains both the manager and employee.
 1. `match` executes its `some` function if an employee was originally found and that employee has a manager. Since we supplied a fallback manager with `or`, the `some` function of `match` will execute if we found an employee. The `none` function of `match` executes if we didn't find any employees.
 
-See more examples of Maybe [in the docs](./docs/maybe.md) or [in the tests](./test/maybe).
+See more examples of `Maybe` [in the docs](./docs/maybe.md) or [in the tests](./test/maybe).
 
 ### MaybeAsync
 
@@ -105,7 +105,7 @@ See more examples of Maybe [in the docs](./docs/maybe.md) or [in the tests](./te
 
 `MaybeAsync` works just like `Maybe`, but since it is asynchronous, its methods accept a `Promise<T>` in most cases and all of its value accessing methods/getters return a `Promise<T>`.
 
-See more examples of Maybe [in the docs](./docs/maybeAsync.md) or [in the tests](./test/maybeAsync).
+See more examples of `MaybeAsync` [in the docs](./docs/maybeAsync.md) or [in the tests](./test/maybeAsync).
 
 ### Result
 
@@ -171,7 +171,7 @@ Result.try(
 1. `map`'s callback is only called if the original employee was found, has a `managerId` and that manager was also found. It converts the manager returned by `try` to a new object capturing both the manager and employee's name.
 1. `match`'s `success` callback is only called if all the required information was retrieved and sends a reminder to the employee's manager. The `failure` callback is called if any of the required data could not be retrieved and sends an alert to the business supervisor with the error message.
 
-See more examples of Maybe [in the docs](./docs/result.md) or [in the tests](./test/result).
+See more examples of `Result` [in the docs](./docs/result.md) or [in the tests](./test/result).
 
 ### ResultAsync
 
@@ -198,4 +198,4 @@ const result = await resultAsync.toPromise();
 console.log(result.getErrorOrThrow()); // 'Could not retrieve inventory: connection failure'
 ```
 
-See more examples of Maybe [in the docs](./docs/resultAsync.md) or [in the tests](./test/resultAsync).
+See more examples of `ResultAsync` [in the docs](./docs/resultAsync.md) or [in the tests](./test/resultAsync).
