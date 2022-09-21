@@ -1,6 +1,8 @@
 {
-  "extends": "./tsconfig.base.json",
+  "extends": "./tsconfig.esm.json",
+  "include": ["**/*.ts", "**/*.d.ts"],
   "compilerOptions": {
-    "outDir": "dist/esm"
+    "outDir": "dist/esm",
+    "types": ["vitest/globals"]
   }
 }
