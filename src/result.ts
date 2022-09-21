@@ -1,5 +1,5 @@
-import { ResultAsync } from './resultAsync';
-import { Unit } from './unit';
+import { ResultAsync } from './resultAsync.js';
+import { Unit } from './unit.js';
 import {
   Action,
   ActionOfT,
@@ -19,7 +19,7 @@ import {
   ResultMatcher,
   ResultMatcherNoReturn,
   Some,
-} from './utilities';
+} from './utilities.js';
 
 /**
  * Allows to extract the Value of the given Result-Type

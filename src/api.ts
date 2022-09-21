@@ -1,7 +1,7 @@
-import { Result } from './result';
-import { ResultAsync } from './resultAsync';
-import { Unit } from './unit';
-import { Some } from './utilities';
+import { Result } from './result.js';
+import { ResultAsync } from './resultAsync.js';
+import { Unit } from './unit.js';
+import { Some } from './utilities.js';
 
 /**
  * Wraps a fetch request generated Promise in a ResultAsync,
