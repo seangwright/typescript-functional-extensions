@@ -1,5 +1,5 @@
-import { Maybe } from './maybe';
-import { isDefined, None, Some } from './utilities';
+import { Maybe } from './maybe.js';
+import { isDefined, None, Some } from './utilities.js';
 
 /**
  * Converts string, null, or undefined values into a Maybe<string>. Throws an error for defined, non-string values.

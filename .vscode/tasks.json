@@ -15,7 +15,7 @@
       "script": "test",
       "group": "test",
       "problemMatcher": [],
-      "detail": "Runs the Jest tests"
+      "detail": "Runs the Vitest tests"
     },
     {
       "label": "test - watch",
@@ -24,7 +24,7 @@
       "script": "test:watch",
       "group": "test",
       "problemMatcher": [],
-      "detail": "Runs the Jest tests in watch mode"
+      "detail": "Runs the Vitest tests in watch mode"
     },
     {
       "label": "typescript - build",

@@ -1,6 +1,6 @@
-import { MaybeAsync } from './maybeAsync';
-import { Result } from './result';
-import { Unit } from './unit';
+import { MaybeAsync } from './maybeAsync.js';
+import { Result } from './result.js';
+import { Unit } from './unit.js';
 import {
   Action,
   ActionOfT,
@@ -18,7 +18,7 @@ import {
   pipeFromArray,
   PredicateOfT,
   Some,
-} from './utilities';
+} from './utilities.js';
 
 /**
  * Represents a value that might not exist. Undefined and null values are always represented as Maybe.none.

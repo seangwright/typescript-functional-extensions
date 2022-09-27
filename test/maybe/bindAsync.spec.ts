@@ -21,7 +21,9 @@ describe('Maybe', () => {
 
       const sut = Maybe.some(value);
 
-      const innerMaybe = await sut.bindAsync((_) => MaybeAsync.none<string>());
+      const innerMaybe = await sut
+        .bindAsync((_) => MaybeAsync.none<string>())
+        .toPromise();
 
       expect(innerMaybe).toHaveNoValue();
     });
@@ -30,10 +32,12 @@ describe('Maybe', () => {
       const sut = Maybe.none<number>();
       let wasCalled = false;
 
-      const innerMaybe = await sut.bindAsync((_) => {
-        wasCalled = true;
-        return MaybeAsync.some('test');
-      });
+      const innerMaybe = await sut
+        .bindAsync((_) => {
+          wasCalled = true;
+          return MaybeAsync.some('test');
+        })
+        .toPromise();
 
       expect(innerMaybe).toHaveNoValue();
     });

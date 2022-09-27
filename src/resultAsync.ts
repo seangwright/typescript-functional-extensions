@@ -1,5 +1,5 @@
-import { Result } from './result';
-import { Unit } from './unit';
+import { Result } from './result.js';
+import { Unit } from './unit.js';
 import {
   ActionOfT,
   AsyncAction,
@@ -16,7 +16,7 @@ import {
   ResultMatcher,
   ResultMatcherNoReturn,
   Some,
-} from './utilities';
+} from './utilities.js';
 
 /**
  * Represents and asynchronous Result that could succeed with a value or fail with an error

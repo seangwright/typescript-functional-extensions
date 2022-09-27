@@ -13,6 +13,52 @@ A TypeScript implementation of the C# library [CSharpFunctionalExtensions](https
 
 ## How to Use
 
+### npm
+
+```bash
+npm i typescript-functional-extensions
+```
+
+### Unpkg
+
+> Supported since v1.4.0+
+
+#### Full distributed source
+
+<https://unpkg.com/browse/typescript-functional-extensions@1.4.0/>
+
+#### ES Modules
+
+<https://unpkg.com/typescript-functional-extensions@version/dist/esm/file>
+
+Example:
+
+<https://unpkg.com/typescript-functional-extensions@1.4.0/dist/esm/maybe.js>
+
+```javascript
+const { Maybe } = await import(
+  'https://unpkg.com/typescript-functional-extensions@1.4.0/dist/esm/maybe.js'
+);
+
+const maybe = Maybe.some('test');
+```
+
+### Module Sizes
+
+The distributed library is currently not minified. Below are the module sizes when minified (using UglifyJs) and GZipped:
+
+api.js: 0.17 kb
+index.js: 0.09 kb
+maybe.js: 0.81 kb
+maybe.utilities.js: 0.26 kb
+maybeAsync.js: 0.67 kb
+result.js: 1.27 kb
+resultAsync.js: 0.77 kb
+unit.js: 0.14 kb
+utilities.js: 0.27 kb
+
+Total: 4.45 kb
+
 ### Core Monads
 
 ```typescript
@@ -199,3 +245,12 @@ console.log(result.getErrorOrThrow()); // 'Could not retrieve inventory: connect
 ```
 
 See more examples of `ResultAsync` [in the docs](./docs/resultAsync.md) or [in the tests](./test/resultAsync).
+
+## Contributing
+
+To build this project, you must have v16.17.0 or higher
+of the [Node.js](https://nodejs.org/dist/v16.17.0/node-v16.17.0-x64.msi) installed.
+
+If you've found a bug or have a feature request, please [open an issue](https://github.com/seangwright/typescript-functional-extensions/issues/new) on GitHub.
+
+If you'd like to make a contribution, you can create a [Pull Request](https://github.com/seangwright/typescript-functional-extensions/compare) on GitHub.

@@ -1,9 +1,9 @@
 {
-	"recommendations": [
-		"esbenp.prettier-vscode"
-	],
+  "recommendations": [
+    "esbenp.prettier-vscode",
+    "ZixuanChen.vitest-explorer",
+    "dbaeumer.vscode-eslint"
+  ],
 
-	"unwantedRecommendations": [
-		
-	]
+  "unwantedRecommendations": []
 }

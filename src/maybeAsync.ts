@@ -1,6 +1,6 @@
-import { Maybe } from './maybe';
-import { ResultAsync } from './resultAsync';
-import { Unit } from './unit';
+import { Maybe } from './maybe.js';
+import { ResultAsync } from './resultAsync.js';
+import { Unit } from './unit.js';
 import {
   ActionOfT,
   AsyncActionOfT,
@@ -14,7 +14,7 @@ import {
   None,
   pipeFromArray,
   Some,
-} from './utilities';
+} from './utilities.js';
 
 /**
  * Represents an asynchronous value that might or might not exist
