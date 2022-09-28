@@ -50,14 +50,14 @@ The distributed library is currently not minified. Below are the module sizes wh
 api.js: 0.17 kb
 index.js: 0.09 kb
 maybe.js: 0.81 kb
-maybe.utilities.js: 0.26 kb
-maybeAsync.js: 0.67 kb
-result.js: 1.27 kb
-resultAsync.js: 0.77 kb
-unit.js: 0.14 kb
+maybe.utilities.js: 0.27 kb
+maybeAsync.js: 0.63 kb
+result.js: 1.25 kb
+resultAsync.js: 0.71 kb
+unit.js: 0.13 kb
 utilities.js: 0.27 kb
 
-Total: 4.45 kb
+Total: 4.32 kb
 
 ### Core Monads
 

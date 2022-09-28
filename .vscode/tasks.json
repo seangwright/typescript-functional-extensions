@@ -42,6 +42,14 @@
       "script": "start",
       "problemMatcher": [],
       "detail": "Runs the TypeScript compilation in watch mode"
+    },
+    {
+      "label": "report - size",
+      "dependsOn": ["typescript - build"],
+      "type": "npm",
+      "script": "report:size",
+      "problemMatcher": [],
+      "detail": "Reports on the size of the distributable library files"
     }
   ]
 }
