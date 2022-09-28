@@ -24,7 +24,7 @@ for (const file of files.filter((f) => f.endsWith('.js'))) {
   const size = await gzipSize(code);
   total += size;
 
-  console.log(`${file}: ${kb(size)} kb`);
+  console.log(`- ${file}: ${kb(size)} kb`);
 }
 
 console.log(`\r\nTotal: ${kb(total)} kb`);
