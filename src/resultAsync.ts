@@ -283,14 +283,9 @@ export class ResultAsync<TValue = Unit, TError = string> {
           return Result.failure(errorOrErrorCreator);
         }
 
-        const handledResultOrPromise = errorOrErrorCreator(value);
-
-        if (handledResultOrPromise instanceof Promise) {
-          const unwrappedResult = await handledResultOrPromise;
-          return Result.failure(unwrappedResult);
-        }
-
-        return Result.failure(handledResultOrPromise);
+        return unwrapHandledError<TValue, TError, TValue>(errorOrErrorCreator)(
+          value
+        );
       })
     );
   }
@@ -684,24 +679,15 @@ export class ResultAsync<TValue = Unit, TError = string> {
       return this.value;
     }
 
-    return this.value.catch(async (error) => {
-      const handleResultOrPromise = errorHandler(error);
-
-      if (handleResultOrPromise instanceof Promise) {
-        const unwrappedResult = await handleResultOrPromise;
-        return Result.failure(unwrappedResult);
-      }
-
-      return Result.failure(handleResultOrPromise);
-    });
+    return this.value.catch(unwrapHandledError(errorHandler));
   }
 }
 
-function unwrapHandledError<TValue, TError>(
+function unwrapHandledError<TValue, TError, TErrorSource = unknown>(
   errorHandler:
-    | FunctionOfTtoK<unknown, Some<TError>>
-    | AsyncFunctionOfTtoK<unknown, Some<TError>>
-): (error: unknown) => Promise<Result<TValue, TError>> {
+    | FunctionOfTtoK<TErrorSource, Some<TError>>
+    | AsyncFunctionOfTtoK<TErrorSource, Some<TError>>
+): (error: TErrorSource) => Promise<Result<TValue, TError>> {
   return async (error) => {
     const handledResultOrPromise = errorHandler(error);
 
