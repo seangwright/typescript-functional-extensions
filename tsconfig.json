@@ -2,7 +2,6 @@
   "extends": "./tsconfig.esm.json",
   "include": ["**/*.ts", "**/*.d.ts"],
   "compilerOptions": {
-    "skipLibCheck": true,
     "outDir": "dist/esm",
     "types": ["vitest/globals"]
   }
