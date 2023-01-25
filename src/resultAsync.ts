@@ -302,7 +302,6 @@ export class ResultAsync<TValue = Unit, TError = string> {
 
         if (handledResultOrPromise instanceof Promise) {
           const unwrappedResult = await handledResultOrPromise;
-          console.log('UNRWAPPED: ', unwrappedResult);
           return Result.failure(unwrappedResult);
         }
 
