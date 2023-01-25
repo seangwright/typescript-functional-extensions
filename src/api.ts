@@ -16,10 +16,7 @@ export function fetchJsonResponse<TValue, TError = string>(
     | FunctionOfTtoK<unknown, Some<TError>>
     | AsyncFunctionOfTtoK<unknown, Some<TError>>
 ): ResultAsync<TValue, TError> {
-  return ResultAsync.try<Response, TError>(
-    request,
-    async (error: unknown) => await errorHandler(error)
-  )
+  return ResultAsync.try<Response, TError>(request, errorHandler)
     .ensure((resp) => resp.ok, errorHandler)
     .map<TValue>((resp) => resp.json());
 }
@@ -39,8 +36,8 @@ export function fetchResponse<TError = string>(
     | FunctionOfTtoK<unknown, Some<TError>>
     | AsyncFunctionOfTtoK<unknown, Some<TError>>
 ): ResultAsync<Response, TError> {
-  return ResultAsync.try<Response, TError>(
-    request,
-    async (error: unknown) => await errorHandler(error)
-  ).ensure((resp) => resp.ok, errorHandler);
+  return ResultAsync.try<Response, TError>(request, errorHandler).ensure(
+    (resp) => resp.ok,
+    errorHandler
+  );
 }
