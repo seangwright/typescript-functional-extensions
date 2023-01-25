@@ -134,24 +134,9 @@ export class ResultAsync<TValue = Unit, TError = string> {
           .catch(unwrapHandledError(errorHandler))
       );
     } catch (error: unknown) {
-      return new ResultAsync(unwrapHandledError(errorHandler)(error));
-    }
-
-    function unwrapHandledError(
-      errorHandler:
-        | FunctionOfTtoK<unknown, Some<TError>>
-        | AsyncFunctionOfTtoK<unknown, Some<TError>>
-    ): (error: unknown) => Promise<Result<TValue, TError>> {
-      return async (error) => {
-        const handledResultOrPromise = errorHandler(error);
-
-        if (handledResultOrPromise instanceof Promise) {
-          const unwrappedResult = await handledResultOrPromise;
-          return Result.failure<TValue, TError>(unwrappedResult);
-        }
-
-        return Result.failure<TValue, TError>(handledResultOrPromise);
-      };
+      return new ResultAsync(
+        unwrapHandledError<TValue, TError>(errorHandler)(error)
+      );
     }
   }
 
@@ -710,6 +695,23 @@ export class ResultAsync<TValue = Unit, TError = string> {
       return Result.failure(handleResultOrPromise);
     });
   }
+}
+
+function unwrapHandledError<TValue, TError>(
+  errorHandler:
+    | FunctionOfTtoK<unknown, Some<TError>>
+    | AsyncFunctionOfTtoK<unknown, Some<TError>>
+): (error: unknown) => Promise<Result<TValue, TError>> {
+  return async (error) => {
+    const handledResultOrPromise = errorHandler(error);
+
+    if (handledResultOrPromise instanceof Promise) {
+      const unwrappedResult = await handledResultOrPromise;
+      return Result.failure<TValue, TError>(unwrappedResult);
+    }
+
+    return Result.failure<TValue, TError>(handledResultOrPromise);
+  };
 }
 
 export type ResultAsyncOpFn<A, AE, B, BE> = FunctionOfTtoK<
