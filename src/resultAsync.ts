@@ -695,19 +695,20 @@ export class ResultAsync<TValue = Unit, TError = string> {
       | FunctionOfTtoK<unknown, Some<TError>>
       | AsyncFunctionOfTtoK<unknown, Some<TError>>
   ): Promise<Result<TValue, TError>> {
-    if (isDefined(errorHandler)) {
-      return this.value.catch(async (error) => {
-        const handleResultOrPromise = errorHandler(error);
-
-        if (handleResultOrPromise instanceof Promise) {
-          return Result.failure(await handleResultOrPromise);
-        }
-
-        return Result.failure(handleResultOrPromise);
-      });
+    if (!isDefined(errorHandler)) {
+      return this.value;
     }
 
-    return this.value;
+    return this.value.catch(async (error) => {
+      const handleResultOrPromise = errorHandler(error);
+
+      if (handleResultOrPromise instanceof Promise) {
+        const unwrappedResult = await handleResultOrPromise;
+        return Result.failure(unwrappedResult);
+      }
+
+      return Result.failure(handleResultOrPromise);
+    });
   }
 }
 
