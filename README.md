@@ -92,6 +92,13 @@ import {
 } from 'typescript-functional-extensions';
 ```
 
+```typescript
+import {
+  fetchResponse,
+  fetchJsonResponse,
+} from 'typescript-functional-extensions';
+```
+
 ## Monads
 
 Below are the monads included in this package and examples of their use.
