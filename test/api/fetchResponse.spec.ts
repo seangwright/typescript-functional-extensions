@@ -1,4 +1,5 @@
 import { fetchResponse } from '@/src/api';
+import { Response } from 'cross-fetch';
 
 describe('api', () => {
   describe('fetchResponse', () => {
