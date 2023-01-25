@@ -1,27 +1,29 @@
-import { fetchResponse } from '@/src/api';
+import { fetchJsonResponse } from '@/src/api';
 
 describe('api', () => {
-  describe('fetchResponse', () => {
+  describe('fetchJsonResponse', () => {
     test('returns the Response on success', async () => {
-      const resp = new Response('2');
+      const responseName = 'Beebo';
+      const resp = new Response(JSON.stringify({ name: responseName }));
 
-      const sut = await fetchResponse(Promise.resolve(resp), (err) => 'Error')
-        .map(async (resp) => await resp.text())
-        .map((n) => parseInt(n, 10) + 1)
+      const sut = await fetchJsonResponse<{ name: string }>(
+        Promise.resolve(resp),
+        (err) => 'Error'
+      )
+        .map(({ name }) => name)
         .toPromise();
 
-      expect(sut).toSucceedWith(3);
+      expect(sut).toSucceedWith(responseName);
     });
 
     test('returns the error on rejected promises', async () => {
       const error = 'error';
 
-      const sut = await fetchResponse(
+      const sut = await fetchJsonResponse<{ name: string }>(
         Promise.reject(error),
         (err) => err as string
       )
-        .map(async (resp) => await resp.text())
-        .map((n) => parseInt(n, 10) + 1)
+        .map(({ name }) => name)
         .toPromise();
 
       expect(sut).toFailWith(error);
@@ -34,7 +36,7 @@ describe('api', () => {
         statusText: 'bad request',
       });
 
-      const sut = await fetchResponse<string>(
+      const sut = await fetchJsonResponse<{ name: string }>(
         Promise.resolve(resp),
         async (err) => {
           if (typeof err === 'string') {
@@ -48,8 +50,7 @@ describe('api', () => {
           return 'error';
         }
       )
-        .map(async (resp) => await resp.text())
-        .map((n) => parseInt(n, 10) + 1)
+        .map(({ name }) => name)
         .toPromise();
 
       expect(sut).toFailWith(error);
