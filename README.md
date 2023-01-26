@@ -59,17 +59,17 @@ const maybe = Maybe.some('test');
 
 The distributed library is currently not minified. Below are the module sizes when minified (using UglifyJs) and GZipped:
 
-- api.js: 0.17 kb
+- api.js: 0.15 kb
 - index.js: 0.09 kb
 - maybe.js: 0.81 kb
 - maybe.utilities.js: 0.27 kb
-- maybeAsync.js: 0.63 kb
+- maybeAsync.js: 0.64 kb
 - result.js: 1.25 kb
-- resultAsync.js: 0.71 kb
+- resultAsync.js: 0.74 kb
 - unit.js: 0.13 kb
 - utilities.js: 0.27 kb
 
-Total: 4.32 kb
+Total: 4.33 kb
 
 ### Core Monads
 
@@ -267,8 +267,8 @@ See more examples of `ResultAsync` [in the docs](./docs/resultAsync.md) or [in t
 
 ## Contributing
 
-To build this project, you must have v16.17.0 or higher
-of the [Node.js](https://nodejs.org/dist/v16.17.0/node-v16.17.0-x64.msi) installed.
+To build this project, you must have v18.12.1 or higher
+of the [Node.js](https://nodejs.org/dist/v18.12.1/node-v18.12.1-x64.msi) installed.
 
 If you've found a bug or have a feature request, please [open an issue](https://github.com/seangwright/typescript-functional-extensions/issues/new) on GitHub.
 
