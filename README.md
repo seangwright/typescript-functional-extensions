@@ -4,12 +4,24 @@
 
 A TypeScript implementation of the C# library [CSharpFunctionalExtensions](https://github.com/vkhorikov/CSharpFunctionalExtensions), including synchronous and asynchronous `Maybe` and `Result` monads.
 
-## Further Reading
+## Community
+
+### Related Projects
+
+- [NestJS typescript-functional-extensions utilities](https://github.com/startupdevhouse/typescript-functional-extensions-nestjs) (A library of utilities for working with `typescript-functional-extensions` in [NestJS](https://nestjs.com/) projects)
+
+### Influences
+
+- [fp-ts](https://github.com/gcanti/fp-ts) (Typed functional programming in TypeScript)
+- [CSharpFunctionalExtensions](https://github.com/vkhorikov/CSharpFunctionalExtensions) (A library to help write C# code in more functional way)
+
+### Further Reading
 
 - [Functional Extensions for C#](https://github.com/vkhorikov/CSharpFunctionalExtensions)
 - [Functors, Applicatives, And Monads In Pictures](https://adit.io/posts/2013-04-17-functors,_applicatives,_and_monads_in_pictures.html)
-- [Modeling Missing Data - The Maybe Monad](https://dev.to/seangwright/kentico-xperience-design-patterns-modeling-missing-data-the-maybe-monad-2c7i)
 - [Railway Oriented Programming](https://fsharpforfunandprofit.com/rop/)
+- [Modeling Missing Data - The Maybe Monad](https://dev.to/seangwright/kentico-xperience-design-patterns-modeling-missing-data-the-maybe-monad-2c7i)
+- [Handling Failures - The Result Monad](https://dev.to/seangwright/kentico-xperience-design-patterns-handling-failures-the-result-monad-1j25)
 
 ## How to Use
 
