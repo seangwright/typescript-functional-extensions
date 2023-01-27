@@ -1,6 +1,7 @@
 import { Result } from './result.js';
 import { Unit } from './unit.js';
 import {
+  Action,
   ActionOfT,
   AsyncAction,
   AsyncActionOfT,
@@ -554,6 +555,32 @@ export class ResultAsync<TValue = Unit, TError = string> {
         return isFunction(conditionOrPredicate)
           ? r.tapIf(conditionOrPredicate, action)
           : r.tapIf(conditionOrPredicate, action);
+      })
+    );
+  }
+
+  /**
+   * Executes the given async action if the ResultAsync is successful or failed
+   * @param action an async function
+   * @returns the current ResultAsync wrapping the inner Result
+   */
+  tapEither(asyncAction: AsyncAction): ResultAsync<TValue, TError>;
+  /**
+   * Executes the given action if the ResultAsync is successful or failed
+   * @param action a function
+   * @returns the current ResultAsync wrapping the inner Result
+   */
+  tapEither(action: Action): ResultAsync<TValue, TError>;
+  tapEither(action: Action | AsyncAction): ResultAsync<TValue, TError> {
+    return new ResultAsync(
+      this.value.then(async (originalResult) => {
+        const actionResult = action();
+
+        if (actionResult instanceof Promise) {
+          await actionResult;
+        }
+
+        return originalResult;
       })
     );
   }
