@@ -73,11 +73,15 @@ export class ResultAsync<TValue = Unit, TError = string> {
    */
   static try<TValue, TError = string>(
     func: AsyncFunctionOfT<Some<TValue>>,
-    errorHandler: FunctionOfTtoK<unknown, Some<TError>>
+    errorHandler:
+      | FunctionOfTtoK<unknown, Some<TError>>
+      | AsyncFunctionOfTtoK<unknown, Some<TError>>
   ): ResultAsync<TValue, TError>;
   static try<TError = string>(
     func: AsyncAction,
-    errorHandler: FunctionOfTtoK<unknown, Some<TError>>
+    errorHandler:
+      | FunctionOfTtoK<unknown, Some<TError>>
+      | AsyncFunctionOfTtoK<unknown, Some<TError>>
   ): ResultAsync<Unit, TError>;
   /**
    * Creates a new successful ResultAsync with the inner value
@@ -88,7 +92,9 @@ export class ResultAsync<TValue = Unit, TError = string> {
    */
   static try<TValue, TError = string>(
     promise: Promise<Some<TValue>>,
-    errorHandler: FunctionOfTtoK<unknown, Some<TError>>
+    errorHandler:
+      | FunctionOfTtoK<unknown, Some<TError>>
+      | AsyncFunctionOfTtoK<unknown, Some<TError>>
   ): ResultAsync<TValue, TError>;
   /**
    * Creates a new successful ResultAsync with a Unit value.
@@ -99,7 +105,9 @@ export class ResultAsync<TValue = Unit, TError = string> {
    */
   static try<TError = string>(
     promise: Promise<void>,
-    errorHandler: FunctionOfTtoK<unknown, Some<TError>>
+    errorHandler:
+      | FunctionOfTtoK<unknown, Some<TError>>
+      | AsyncFunctionOfTtoK<unknown, Some<TError>>
   ): ResultAsync<Unit, TError>;
   static try<TValue = Unit, TError = string>(
     promiseOrFunction:
@@ -107,13 +115,15 @@ export class ResultAsync<TValue = Unit, TError = string> {
       | Promise<void>
       | AsyncFunctionOfT<Some<TValue>>
       | AsyncAction,
-    errorHandler: FunctionOfTtoK<unknown, Some<TError>>
+    errorHandler:
+      | FunctionOfTtoK<unknown, Some<TError>>
+      | AsyncFunctionOfTtoK<unknown, Some<TError>>
   ): ResultAsync<TValue, TError> {
     if (isPromise(promiseOrFunction)) {
       return new ResultAsync(
         promiseOrFunction
           .then((value) => Result.success<TValue, TError>(value!))
-          .catch((error) => Result.failure(errorHandler(error)))
+          .catch(unwrapHandledError(errorHandler))
       );
     }
 
@@ -121,11 +131,11 @@ export class ResultAsync<TValue = Unit, TError = string> {
       return new ResultAsync(
         promiseOrFunction()
           .then((value) => Result.success<TValue, TError>(value!))
-          .catch((error) => Result.failure(errorHandler(error)))
+          .catch(unwrapHandledError(errorHandler))
       );
     } catch (error: unknown) {
       return new ResultAsync(
-        Promise.resolve(Result.failure(errorHandler(error)))
+        unwrapHandledError<TValue, TError>(errorHandler)(error)
       );
     }
   }
@@ -252,23 +262,30 @@ export class ResultAsync<TValue = Unit, TError = string> {
    */
   ensure(
     predicate: PredicateOfT<TValue>,
-    errorOrErrorCreator: Some<TError> | FunctionOfTtoK<TValue, Some<TError>>
+    errorOrErrorCreator:
+      | Some<TError>
+      | FunctionOfTtoK<TValue, Some<TError>>
+      | AsyncFunctionOfTtoK<TValue, Some<TError>>
   ): ResultAsync<TValue, TError> {
     return new ResultAsync(
-      this.value.then((result) => {
+      this.value.then(async (result) => {
         if (result.isFailure) {
           return result;
         }
 
         const value = result.getValueOrThrow();
 
-        if (!predicate(value)) {
-          return isFunction(errorOrErrorCreator)
-            ? Result.failure(errorOrErrorCreator(value))
-            : Result.failure(errorOrErrorCreator);
+        if (predicate(value)) {
+          return result;
         }
 
-        return result;
+        if (!isFunction(errorOrErrorCreator)) {
+          return Result.failure(errorOrErrorCreator);
+        }
+
+        return unwrapHandledError<TValue, TError, TValue>(errorOrErrorCreator)(
+          value
+        );
       })
     );
   }
@@ -649,16 +666,38 @@ export class ResultAsync<TValue = Unit, TError = string> {
    * Returns the inner Promise, wrapping a failed Result for a rejected Promise with the
    * given errorHandler if provided, othewise rejected Promise handling
    * is left to the caller.
-   * @param errorHandler
+   * @param errorHandler a value or Promise returning error handler that converts a rejected Promise
+   *  to a failed Result.
    * @returns
    */
   toPromise(
-    errorHandler?: FunctionOfTtoK<unknown, Some<TError>>
+    errorHandler?:
+      | FunctionOfTtoK<unknown, Some<TError>>
+      | AsyncFunctionOfTtoK<unknown, Some<TError>>
   ): Promise<Result<TValue, TError>> {
-    return isDefined(errorHandler)
-      ? this.value.catch((error) => Result.failure(errorHandler(error)))
-      : this.value;
+    if (!isDefined(errorHandler)) {
+      return this.value;
+    }
+
+    return this.value.catch(unwrapHandledError(errorHandler));
   }
+}
+
+function unwrapHandledError<TValue, TError, TErrorSource = unknown>(
+  errorHandler:
+    | FunctionOfTtoK<TErrorSource, Some<TError>>
+    | AsyncFunctionOfTtoK<TErrorSource, Some<TError>>
+): (error: TErrorSource) => Promise<Result<TValue, TError>> {
+  return async (error) => {
+    const handledResultOrPromise = errorHandler(error);
+
+    if (handledResultOrPromise instanceof Promise) {
+      const unwrappedResult = await handledResultOrPromise;
+      return Result.failure<TValue, TError>(unwrappedResult);
+    }
+
+    return Result.failure<TValue, TError>(handledResultOrPromise);
+  };
 }
 
 export type ResultAsyncOpFn<A, AE, B, BE> = FunctionOfTtoK<

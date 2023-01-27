@@ -4,12 +4,24 @@
 
 A TypeScript implementation of the C# library [CSharpFunctionalExtensions](https://github.com/vkhorikov/CSharpFunctionalExtensions), including synchronous and asynchronous `Maybe` and `Result` monads.
 
-## Further Reading
+## Community
+
+### Related Projects
+
+- [NestJS typescript-functional-extensions utilities](https://github.com/startupdevhouse/typescript-functional-extensions-nestjs) (A library of utilities for working with `typescript-functional-extensions` in [NestJS](https://nestjs.com/) projects)
+
+### Influences
+
+- [fp-ts](https://github.com/gcanti/fp-ts) (Typed functional programming in TypeScript)
+- [CSharpFunctionalExtensions](https://github.com/vkhorikov/CSharpFunctionalExtensions) (A library to help write C# code in more functional way)
+
+### Further Reading
 
 - [Functional Extensions for C#](https://github.com/vkhorikov/CSharpFunctionalExtensions)
 - [Functors, Applicatives, And Monads In Pictures](https://adit.io/posts/2013-04-17-functors,_applicatives,_and_monads_in_pictures.html)
-- [Modeling Missing Data - The Maybe Monad](https://dev.to/seangwright/kentico-xperience-design-patterns-modeling-missing-data-the-maybe-monad-2c7i)
 - [Railway Oriented Programming](https://fsharpforfunandprofit.com/rop/)
+- [Modeling Missing Data - The Maybe Monad](https://dev.to/seangwright/kentico-xperience-design-patterns-modeling-missing-data-the-maybe-monad-2c7i)
+- [Handling Failures - The Result Monad](https://dev.to/seangwright/kentico-xperience-design-patterns-handling-failures-the-result-monad-1j25)
 
 ## How to Use
 
@@ -47,17 +59,17 @@ const maybe = Maybe.some('test');
 
 The distributed library is currently not minified. Below are the module sizes when minified (using UglifyJs) and GZipped:
 
-- api.js: 0.17 kb
+- api.js: 0.15 kb
 - index.js: 0.09 kb
 - maybe.js: 0.81 kb
 - maybe.utilities.js: 0.27 kb
-- maybeAsync.js: 0.63 kb
+- maybeAsync.js: 0.64 kb
 - result.js: 1.25 kb
-- resultAsync.js: 0.71 kb
+- resultAsync.js: 0.74 kb
 - unit.js: 0.13 kb
 - utilities.js: 0.27 kb
 
-Total: 4.32 kb
+Total: 4.33 kb
 
 ### Core Monads
 
@@ -89,6 +101,13 @@ import {
   zeroAsNone,
   emptyStringAsNone,
   emptyOrWhiteSpaceStringAsNone,
+} from 'typescript-functional-extensions';
+```
+
+```typescript
+import {
+  fetchResponse,
+  fetchJsonResponse,
 } from 'typescript-functional-extensions';
 ```
 
@@ -248,8 +267,8 @@ See more examples of `ResultAsync` [in the docs](./docs/resultAsync.md) or [in t
 
 ## Contributing
 
-To build this project, you must have v16.17.0 or higher
-of the [Node.js](https://nodejs.org/dist/v16.17.0/node-v16.17.0-x64.msi) installed.
+To build this project, you must have v18.12.1 or higher
+of the [Node.js](https://nodejs.org/dist/v18.12.1/node-v18.12.1-x64.msi) installed.
 
 If you've found a bug or have a feature request, please [open an issue](https://github.com/seangwright/typescript-functional-extensions/issues/new) on GitHub.
 
