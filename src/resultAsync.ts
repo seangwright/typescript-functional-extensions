@@ -494,6 +494,26 @@ export class ResultAsync<TValue = Unit, TError = string> {
     );
   }
 
+  bindFailure(
+    projection:
+      | FunctionOfT<Result<TValue, TError>>
+      | FunctionOfT<ResultAsync<TValue, TError>>
+  ): ResultAsync<TValue, TError> {
+    return new ResultAsync(
+      this.value.then((r) => {
+        if (r.isSuccess) {
+          return Result.success(r.getValueOrThrow());
+        }
+
+        const resultOrResultAsync = projection();
+
+        return resultOrResultAsync instanceof Result
+          ? resultOrResultAsync
+          : resultOrResultAsync.toPromise();
+      })
+    );
+  }
+
   /**
    * Executes the given async action if the ResultAsync is successful
    * @param action an async function given the value of the successful ResultAsync
