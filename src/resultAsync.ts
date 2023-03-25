@@ -494,6 +494,11 @@ export class ResultAsync<TValue = Unit, TError = string> {
     );
   }
 
+  /**
+   * Maps a failed ResultAsync to a new ResultAsync
+   * @param projection
+   * @returns
+   */
   bindFailure(
     projection:
       | FunctionOfT<Result<TValue, TError>>

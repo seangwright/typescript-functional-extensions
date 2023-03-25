@@ -766,12 +766,22 @@ export class Result<TValue = Unit, TError = string> {
       : resultAsyncOrPromise;
   }
 
+  /**
+   * Maps a failed Result to a new Result
+   * @param projection
+   * @returns
+   */
   bindFailure(
     projection: FunctionOfT<Result<TValue, TError>>
   ): Result<TValue, TError> {
     return this.isSuccess ? this : projection();
   }
 
+  /**
+   * Maps a failed Result to a new ResultAsync
+   * @param projection
+   * @returns
+   */
   bindFailureAsync(
     projection:
       | FunctionOfT<Promise<Result<TValue, TError>>>
