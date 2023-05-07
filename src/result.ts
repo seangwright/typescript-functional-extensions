@@ -3,6 +3,7 @@ import { Unit } from './unit.js';
 import {
   Action,
   ActionOfT,
+  AsyncAction,
   AsyncActionOfT,
   ErrorHandler,
   FunctionOfT,
@@ -848,6 +849,26 @@ export class Result<TValue = Unit, TError = string> {
     }
 
     return this;
+  }
+
+  /**
+   * Executes the action on both success and failure.
+   * @param action a function with no parameters returning no value
+   * @returns the current Result
+   */
+  tapEither(action: Action): Result<TValue, TError> {
+    action();
+
+    return this;
+  }
+
+  /**
+   * Executes the asynchronous action on both success and failure.
+   * @param action a function
+   * @returns the current Result wrapped in a ResultAsync
+   */
+  tapEitherAsync(action: AsyncAction): ResultAsync<TValue, TError> {
+    return ResultAsync.from<TValue, TError>(action().then(() => this));
   }
 
   /**
