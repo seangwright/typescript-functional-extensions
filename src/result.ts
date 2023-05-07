@@ -768,6 +768,38 @@ export class Result<TValue = Unit, TError = string> {
   }
 
   /**
+   * Maps a failed Result to a new Result
+   * @param projection
+   * @returns
+   */
+  bindFailure(
+    projection: FunctionOfT<Result<TValue, TError>>
+  ): Result<TValue, TError> {
+    return this.isSuccess ? this : projection();
+  }
+
+  /**
+   * Maps a failed Result to a new ResultAsync
+   * @param projection
+   * @returns
+   */
+  bindFailureAsync(
+    projection:
+      | FunctionOfT<Promise<Result<TValue, TError>>>
+      | FunctionOfT<ResultAsync<TValue, TError>>
+  ): ResultAsync<TValue, TError> {
+    if (this.isSuccess) {
+      return ResultAsync.success(this.getValueOrThrow());
+    }
+
+    const resultAsyncOrPromise = projection();
+
+    return isPromise(resultAsyncOrPromise)
+      ? ResultAsync.from<TValue, TError>(resultAsyncOrPromise)
+      : resultAsyncOrPromise;
+  }
+
+  /**
    * Executes an action if the current Result has succeeded
    * @param action a function given the value of the current Result
    * @returns the current Result
