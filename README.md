@@ -37,7 +37,7 @@ npm i typescript-functional-extensions
 
 #### Full distributed source
 
-<https://unpkg.com/browse/typescript-functional-extensions@1.4.0/>
+<https://unpkg.com/browse/typescript-functional-extensions@2.0.0/>
 
 #### ES Modules
 
@@ -45,11 +45,11 @@ npm i typescript-functional-extensions
 
 Example:
 
-<https://unpkg.com/typescript-functional-extensions@1.4.0/dist/esm/maybe.js>
+<https://unpkg.com/typescript-functional-extensions@2.0.0/dist/esm/maybe.js>
 
 ```javascript
 const { Maybe } = await import(
-  'https://unpkg.com/typescript-functional-extensions@1.4.0/dist/esm/maybe.js'
+  'https://unpkg.com/typescript-functional-extensions@2.0.0/dist/esm/maybe.js'
 );
 
 const maybe = Maybe.some('test');
@@ -64,12 +64,12 @@ The distributed library is currently not minified. Below are the module sizes wh
 - maybe.js: 0.81 kb
 - maybe.utilities.js: 0.27 kb
 - maybeAsync.js: 0.64 kb
-- result.js: 1.26 kb
-- resultAsync.js: 0.75 kb
+- result.js: 1.28 kb
+- resultAsync.js: 0.76 kb
 - unit.js: 0.13 kb
 - utilities.js: 0.27 kb
 
-Total: 4.36 kb
+Total: 4.39 kb
 
 ### Core Monads
 
