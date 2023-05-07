@@ -853,7 +853,7 @@ export class Result<TValue = Unit, TError = string> {
 
   /**
    * Executes the action on both success and failure.
-   * @param action a function
+   * @param action a function with no parameters returning no value
    * @returns the current Result
    */
   tapEither(action: Action): Result<TValue, TError> {
