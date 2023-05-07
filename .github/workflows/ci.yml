@@ -24,8 +24,6 @@ jobs:
       - name: Set Environment Variables
         uses: ./.github/actions/set-env
 
-      - uses: actions/checkout@v2
-
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:

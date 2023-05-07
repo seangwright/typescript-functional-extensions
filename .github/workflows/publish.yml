@@ -22,8 +22,6 @@ jobs:
       - name: Set Package Version Environment Variable
         uses: ./.github/actions/set-package-version
 
-      - uses: actions/checkout@v2
-
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
