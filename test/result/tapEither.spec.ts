@@ -9,6 +9,7 @@ describe('Result', () => {
       sut.tapEither(() => (wasCalled = true));
 
       expect(wasCalled).toBe(true);
+      expect(sut).toSucceedWith(1);
     });
 
     test('will execute the given action if the Result is a failure', () => {
@@ -18,6 +19,7 @@ describe('Result', () => {
       sut.tapEither(() => (wasCalled = true));
 
       expect(wasCalled).toBe(true);
+      expect(sut).toFailWith('error');
     });
   });
 });

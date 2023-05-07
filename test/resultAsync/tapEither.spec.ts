@@ -49,5 +49,23 @@ describe('ResultAsync', () => {
       expect(result).toSucceedWith(1);
       expect(wasCalled).toBe(true);
     });
+
+    test('executes the async action with a failed ResultAsync', async () => {
+      const error = 'error';
+      let wasCalled = false;
+
+      const sut = ResultAsync.failure(error);
+
+      const result = await sut
+        .tapEither(() => {
+          wasCalled = true;
+
+          return Promise.resolve();
+        })
+        .toPromise();
+
+      expect(result).toFailWith(error);
+      expect(wasCalled).toBe(true);
+    });
   });
 });

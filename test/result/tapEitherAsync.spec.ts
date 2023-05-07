@@ -15,6 +15,7 @@ describe('Result', () => {
         await sut.tapEitherAsync(asyncAction).toPromise();
 
         expect(wasCalled).toBe(true);
+        expect(sut).toSucceedWith(1);
       });
 
       test('will execute the asynchronous action if the Result is a failure', async () => {
@@ -29,6 +30,7 @@ describe('Result', () => {
         await sut.tapEitherAsync(asyncAction).toPromise();
 
         expect(wasCalled).toBe(true);
+        expect(sut).toFailWith('error');
       });
     });
   });
