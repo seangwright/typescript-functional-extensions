@@ -501,9 +501,10 @@ export class ResultAsync<TValue = Unit, TError = string> {
    * @returns
    */
   bindFailure(
-    projection:
-      | FunctionOfT<Result<TValue, TError>>
-      | FunctionOfT<ResultAsync<TValue, TError>>
+    projection: FunctionOfTtoK<
+      TError,
+      Result<TValue, TError> | ResultAsync<TValue, TError>
+    >
   ): ResultAsync<TValue, TError> {
     return new ResultAsync(
       this.value.then((r) => {
@@ -511,7 +512,7 @@ export class ResultAsync<TValue = Unit, TError = string> {
           return Result.success(r.getValueOrThrow());
         }
 
-        const resultOrResultAsync = projection();
+        const resultOrResultAsync = projection(r.getErrorOrThrow());
 
         return resultOrResultAsync instanceof Result
           ? resultOrResultAsync

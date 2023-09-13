@@ -773,9 +773,9 @@ export class Result<TValue = Unit, TError = string> {
    * @returns
    */
   bindFailure(
-    projection: FunctionOfT<Result<TValue, TError>>
+    projection: FunctionOfTtoK<TError, Result<TValue, TError>>
   ): Result<TValue, TError> {
-    return this.isSuccess ? this : projection();
+    return this.isSuccess ? this : projection(this.getErrorOrThrow());
   }
 
   /**
@@ -784,15 +784,16 @@ export class Result<TValue = Unit, TError = string> {
    * @returns
    */
   bindFailureAsync(
-    projection:
-      | FunctionOfT<Promise<Result<TValue, TError>>>
-      | FunctionOfT<ResultAsync<TValue, TError>>
+    projection: FunctionOfTtoK<
+      TError,
+      Promise<Result<TValue, TError>> | ResultAsync<TValue, TError>
+    >
   ): ResultAsync<TValue, TError> {
     if (this.isSuccess) {
       return ResultAsync.success(this.getValueOrThrow());
     }
 
-    const resultAsyncOrPromise = projection();
+    const resultAsyncOrPromise = projection(this.getErrorOrThrow());
 
     return isPromise(resultAsyncOrPromise)
       ? ResultAsync.from<TValue, TError>(resultAsyncOrPromise)

@@ -19,5 +19,13 @@ describe('Result', () => {
 
       expect(sut.bindFailure(() => Result.failure('💥💥'))).toFailWith('💥💥');
     });
+
+    test('calls projection with first result error', () => {
+      const sut = Result.failure('💥');
+      const projection = vi.fn(() => Result.success('✅'));
+
+      sut.bindFailure(projection);
+      expect(projection).toBeCalledWith('💥');
+    });
   });
 });
