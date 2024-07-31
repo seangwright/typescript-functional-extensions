@@ -7,7 +7,7 @@ describe('ResultAsync', () => {
       const sut = ResultAsync.failure<number>('error');
 
       const result = await sut
-        .tapEither(() => {
+        .tapEither((_) => {
           wasCalled = true;
         })
         .toPromise();
@@ -23,7 +23,7 @@ describe('ResultAsync', () => {
       const sut = ResultAsync.success(value);
 
       const result = await sut
-        .tapEither(() => {
+        .tapEither((_) => {
           wasCalled = true;
         })
         .toPromise();
@@ -39,7 +39,7 @@ describe('ResultAsync', () => {
       const sut = ResultAsync.success(value);
 
       const result = await sut
-        .tapEither(() => {
+        .tapEither((_) => {
           wasCalled = true;
 
           return Promise.resolve();
@@ -47,6 +47,39 @@ describe('ResultAsync', () => {
         .toPromise();
 
       expect(result).toSucceedWith(1);
+      expect(wasCalled).toBe(true);
+    });
+
+    test('executes the async action using the provided Result for a successful ResultAsync', async () => {
+      const value = 1;
+      let wasCalled = false;
+
+      const sut = ResultAsync.success(value);
+
+      const result = await sut
+        .tapEither((res) => {
+          wasCalled = res.isSuccess;
+
+          return Promise.resolve();
+        })
+        .toPromise();
+
+      expect(result).toSucceedWith(1);
+      expect(wasCalled).toBe(true);
+    });
+
+    test('executes the async action using the provided Result for a failed ResultAsync', async () => {
+      let wasCalled = false;
+
+      const sut = ResultAsync.failure<number>('error');
+
+      const result = await sut
+        .tapEither((res) => {
+          wasCalled = res.isFailure;
+        })
+        .toPromise();
+
+      expect(result).toFailWith('error');
       expect(wasCalled).toBe(true);
     });
   });

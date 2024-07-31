@@ -3,7 +3,6 @@ import { Unit } from './unit.js';
 import {
   Action,
   ActionOfT,
-  AsyncAction,
   AsyncActionOfT,
   ErrorHandler,
   FunctionOfT,
@@ -17,6 +16,7 @@ import {
   pipeFromArray,
   Predicate,
   PredicateOfT,
+  ResultAsyncMatcherNoReturn,
   ResultMatcher,
   ResultMatcherNoReturn,
   Some,
@@ -856,8 +856,26 @@ export class Result<TValue = Unit, TError = string> {
    * @param action a function
    * @returns the current Result
    */
-  tapEither(action: Action): Result<TValue, TError> {
-    action();
+  tapEither(action: ActionOfT<Result<TValue, TError>>): Result<TValue, TError>;
+  /**
+   * Uses the given matcher to execute the correct action for a successful or
+   * failed Result
+   * @param matcher an object with success and failure properties assigned synchronous functions
+   * returning no value and accepting the original Result as a parameter
+   */
+  tapEither(
+    matcher: ResultMatcherNoReturn<TValue, TError>
+  ): Result<TValue, TError>;
+  tapEither(
+    actionOrMatcher:
+      | ActionOfT<Result<TValue, TError>>
+      | ResultMatcherNoReturn<TValue, TError>
+  ): Result<TValue, TError> {
+    if (typeof actionOrMatcher === 'function') {
+      actionOrMatcher(this);
+    } else {
+      this.tap(actionOrMatcher.success).tapFailure(actionOrMatcher.failure);
+    }
 
     return this;
   }
@@ -867,8 +885,39 @@ export class Result<TValue = Unit, TError = string> {
    * @param action a function
    * @returns the current Result wrapped in a ResultAsync
    */
-  tapEitherAsync(action: AsyncAction): ResultAsync<TValue, TError> {
-    return ResultAsync.from<TValue, TError>(action().then(() => this));
+  tapEitherAsync(
+    action: AsyncActionOfT<Result<TValue, TError>>
+  ): ResultAsync<TValue, TError>;
+  /**
+   * Uses the given matcher to execute the correct action for a successful or
+   * failed Result
+   * @param matcher an object with success and failure properties assigned async functions
+   * returning a Promise and accepting the original Result as a parameter
+   */
+  tapEitherAsync(
+    matcher: ResultAsyncMatcherNoReturn<TValue, TError>
+  ): ResultAsync<TValue, TError>;
+  tapEitherAsync(
+    actionOrMatcher:
+      | AsyncActionOfT<Result<TValue, TError>>
+      | ResultAsyncMatcherNoReturn<TValue, TError>
+  ): ResultAsync<TValue, TError> {
+    if (typeof actionOrMatcher === 'function') {
+      return ResultAsync.from<TValue, TError>(
+        actionOrMatcher(this).then(() => this)
+      );
+    }
+
+    const callback: () => Promise<Result<TValue, TError>> = async () => {
+      if (this.hasError()) {
+        await actionOrMatcher.failure(this.error);
+      } else if (this.hasValue()) {
+        await actionOrMatcher.success(this.value);
+      }
+      return this;
+    };
+
+    return ResultAsync.from<TValue, TError>(callback());
   }
 
   /**

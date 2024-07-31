@@ -1,7 +1,6 @@
 import { Result } from './result.js';
 import { Unit } from './unit.js';
 import {
-  Action,
   ActionOfT,
   AsyncAction,
   AsyncActionOfT,
@@ -561,26 +560,54 @@ export class ResultAsync<TValue = Unit, TError = string> {
 
   /**
    * Executes the given async action if the ResultAsync is successful or failed
-   * @param action an async function
+   * @param action an async function accepting the inner Result as a parameter
    * @returns the current ResultAsync wrapping the inner Result
    */
-  tapEither(asyncAction: AsyncAction): ResultAsync<TValue, TError>;
+  tapEither(
+    asyncAction: AsyncActionOfT<Result<TValue, TError>>
+  ): ResultAsync<TValue, TError>;
   /**
    * Executes the given action if the ResultAsync is successful or failed
-   * @param action a function
+   * @param action a function accepting the inner Result as a parameter
    * @returns the current ResultAsync wrapping the inner Result
    */
-  tapEither(action: Action): ResultAsync<TValue, TError>;
-  tapEither(action: Action | AsyncAction): ResultAsync<TValue, TError> {
+  tapEither(
+    action: ActionOfT<Result<TValue, TError>>
+  ): ResultAsync<TValue, TError>;
+  /**
+   * Uses the given matcher to execute the correct action for a successful or
+   * failed Result
+   * @param matcher an object with success and failure properties assigned synchronous functions
+   * returning no value and accepting the original Result as a parameter
+   */
+  tapEither(
+    matcher: ResultMatcherNoReturn<TValue, TError>
+  ): ResultAsync<TValue, TError>;
+  tapEither(
+    actionOrMatcher:
+      | ActionOfT<Result<TValue, TError>>
+      | AsyncActionOfT<Result<TValue, TError>>
+      | ResultMatcherNoReturn<TValue, TError>
+  ): ResultAsync<TValue, TError> {
     return new ResultAsync(
       this.value.then(async (originalResult) => {
-        const actionResult = action();
+        if (typeof actionOrMatcher === 'function') {
+          const actionResult = actionOrMatcher(originalResult);
 
-        if (actionResult instanceof Promise) {
-          await actionResult;
+          if (actionResult instanceof Promise) {
+            await actionResult;
+          }
+
+          return originalResult;
+        } else {
+          const matcherResult = originalResult.tapEither(actionOrMatcher);
+
+          if (matcherResult instanceof Promise) {
+            await matcherResult;
+          }
+
+          return originalResult;
         }
-
-        return originalResult;
       })
     );
   }

@@ -54,6 +54,11 @@ export type ResultMatcherNoReturn<TValue, TError> = {
   failure: ActionOfT<TError>;
 };
 
+export type ResultAsyncMatcherNoReturn<TValue, TError> = {
+  success: AsyncActionOfT<TValue>;
+  failure: AsyncActionOfT<TError>;
+};
+
 /**
  * Sourced from https://github.com/ReactiveX/rxjs/blob/7268bd31d1cb30cf01a1a69a7b14458e15b76b58/src/internal/util/pipe.ts
  * @param fns
