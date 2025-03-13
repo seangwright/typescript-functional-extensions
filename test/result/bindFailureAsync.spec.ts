@@ -66,5 +66,13 @@ describe('Result', () => {
         return expect(innerResult).toFailWith('💥💥');
       });
     });
+
+    test('calls projection with first result error', async () => {
+      const sut = Result.failure('💥');
+      const projection = vi.fn(() => ResultAsync.success('✅'));
+
+      await sut.bindFailureAsync(projection).toPromise();
+      expect(projection).toBeCalledWith('💥');
+    });
   });
 });
