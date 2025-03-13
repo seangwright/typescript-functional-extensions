@@ -497,10 +497,25 @@ export class ResultAsync<TValue = Unit, TError = string> {
 
   /**
    * Maps a failed ResultAsync to a new ResultAsync
+   * @deprecated Please use `compensate` instead
    * @param projection
    * @returns
    */
   bindFailure(
+    projection: FunctionOfTtoK<
+      TError,
+      Result<TValue, TError> | ResultAsync<TValue, TError>
+    >
+  ): ResultAsync<TValue, TError> {
+    return this.compensate(projection);
+  }
+
+  /**
+   * Maps a failed ResultAsync to a new ResultAsync
+   * @param projection
+   * @returns
+   */
+  compensate(
     projection: FunctionOfTtoK<
       TError,
       Result<TValue, TError> | ResultAsync<TValue, TError>

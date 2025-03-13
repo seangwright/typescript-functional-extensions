@@ -769,10 +769,22 @@ export class Result<TValue = Unit, TError = string> {
 
   /**
    * Maps a failed Result to a new Result
+   * @deprecated Please use `compensate` instead
    * @param projection
    * @returns
    */
   bindFailure(
+    projection: FunctionOfTtoK<TError, Result<TValue, TError>>
+  ): Result<TValue, TError> {
+    return this.compensate(projection);
+  }
+
+  /**
+   * Maps a failed Result to a new Result
+   * @param projection
+   * @returns
+   */
+  compensate(
     projection: FunctionOfTtoK<TError, Result<TValue, TError>>
   ): Result<TValue, TError> {
     return this.isSuccess ? this : projection(this.getErrorOrThrow());
@@ -780,10 +792,25 @@ export class Result<TValue = Unit, TError = string> {
 
   /**
    * Maps a failed Result to a new ResultAsync
+   * @deprecated Please use `compensateAsync` instead
    * @param projection
    * @returns
    */
   bindFailureAsync(
+    projection: FunctionOfTtoK<
+      TError,
+      Promise<Result<TValue, TError>> | ResultAsync<TValue, TError>
+    >
+  ): ResultAsync<TValue, TError> {
+    return this.compensateAsync(projection);
+  }
+
+  /**
+   * Maps a failed Result to a new ResultAsync
+   * @param projection
+   * @returns
+   */
+  compensateAsync(
     projection: FunctionOfTtoK<
       TError,
       Promise<Result<TValue, TError>> | ResultAsync<TValue, TError>
