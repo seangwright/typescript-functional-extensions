@@ -2,13 +2,13 @@ import { Result } from '@/src/result';
 import { ResultAsync } from '../../src';
 
 describe('Result', () => {
-  describe('bindFailureAsync', () => {
+  describe('compensateAsync', () => {
     describe('Promise', () => {
       test('takes the result from the second result, when previous result fails', async () => {
         const sut = Result.failure('💥');
 
         const innerResult = await sut
-          .bindFailureAsync(() => Promise.resolve(Result.success('✅')))
+          .compensateAsync(() => Promise.resolve(Result.success('✅')))
           .toPromise();
 
         return expect(innerResult).toSucceedWith('✅');
@@ -18,7 +18,7 @@ describe('Result', () => {
         const sut = Result.success('✅');
 
         const innerResult = await sut
-          .bindFailureAsync(() => Promise.resolve(Result.failure('💥')))
+          .compensateAsync(() => Promise.resolve(Result.failure('💥')))
           .toPromise();
 
         return expect(innerResult).toSucceedWith('✅');
@@ -28,7 +28,7 @@ describe('Result', () => {
         const sut = Result.failure('💥');
 
         const innerResult = await sut
-          .bindFailureAsync(() => Promise.resolve(Result.failure('💥💥')))
+          .compensateAsync(() => Promise.resolve(Result.failure('💥💥')))
           .toPromise();
 
         return expect(innerResult).toFailWith('💥💥');
@@ -40,7 +40,7 @@ describe('Result', () => {
         const sut = Result.failure('💥');
 
         const innerResult = await sut
-          .bindFailureAsync(() => ResultAsync.success('✅'))
+          .compensateAsync(() => ResultAsync.success('✅'))
           .toPromise();
 
         return expect(innerResult).toSucceedWith('✅');
@@ -50,7 +50,7 @@ describe('Result', () => {
         const sut = Result.success('✅');
 
         const innerResult = await sut
-          .bindFailureAsync(() => ResultAsync.failure('💥'))
+          .compensateAsync(() => ResultAsync.failure('💥'))
           .toPromise();
 
         return expect(innerResult).toSucceedWith('✅');
@@ -60,7 +60,7 @@ describe('Result', () => {
         const sut = Result.failure('💥');
 
         const innerResult = await sut
-          .bindFailureAsync(() => ResultAsync.failure('💥💥'))
+          .compensateAsync(() => ResultAsync.failure('💥💥'))
           .toPromise();
 
         return expect(innerResult).toFailWith('💥💥');
@@ -71,7 +71,8 @@ describe('Result', () => {
       const sut = Result.failure('💥');
       const projection = vi.fn(() => ResultAsync.success('✅'));
 
-      await sut.bindFailureAsync(projection).toPromise();
+      await sut.compensateAsync(projection).toPromise();
+
       expect(projection).toBeCalledWith('💥');
     });
   });
