@@ -84,13 +84,17 @@ describe('MaybeAsync', () => {
     test('returns a resolved Promise of true when there is a value', async () => {
       const sut = MaybeAsync.some(1);
 
-      expect(sut.hasValue).resolves.toBe(true);
+      const result = await sut.hasValue;
+
+      expect(result).toBe(true);
     });
 
     test('returns a resolved Promise of false when there is no value', async () => {
       const sut = MaybeAsync.none();
 
-      expect(sut.hasValue).resolves.toBe(false);
+      const result = await sut.hasValue;
+
+      expect(result).toBe(false);
     });
   });
 
@@ -98,54 +102,58 @@ describe('MaybeAsync', () => {
     test('returns a resolved Promise of false when there is a value', async () => {
       const sut = MaybeAsync.some(1);
 
-      expect(sut.hasNoValue).resolves.toBe(false);
+      await expect(sut.hasNoValue).resolves.toBe(false);
     });
 
     test('returns a resolved Promise of true when there is no value', async () => {
       const sut = MaybeAsync.none();
 
-      expect(sut.hasNoValue).resolves.toBe(true);
+      await expect(sut.hasNoValue).resolves.toBe(true);
     });
   });
 
   describe('getValueOrDefault', () => {
-    test('returns the inner value for a MaybeAsync with a value', () => {
+    test('returns the inner value for a MaybeAsync with a value', async () => {
       const value = 1;
       const defaultValue = 10;
       const sut = MaybeAsync.some(value);
 
-      expect(sut.getValueOrDefault(defaultValue)).resolves.toBe(value);
+      await expect(sut.getValueOrDefault(defaultValue)).resolves.toBe(value);
     });
 
-    test('returns the default value for a MaybeAsync with no value', () => {
+    test('returns the default value for a MaybeAsync with no value', async () => {
       const defaultValue = 10;
       const sut = MaybeAsync.none<number>();
 
-      expect(sut.getValueOrDefault(defaultValue)).resolves.toBe(defaultValue);
+      await expect(sut.getValueOrDefault(defaultValue)).resolves.toBe(
+        defaultValue
+      );
     });
 
-    test('returns the result of the default value creator for a MaybeAsync with no value', () => {
+    test('returns the result of the default value creator for a MaybeAsync with no value', async () => {
       const defaultValueCreator = () => 10;
       const sut = MaybeAsync.none<number>();
 
-      expect(sut.getValueOrDefault(defaultValueCreator)).resolves.toBe(
+      await expect(sut.getValueOrDefault(defaultValueCreator)).resolves.toBe(
         defaultValueCreator()
       );
     });
   });
 
   describe('getValueOrThrow', () => {
-    test('returns the inner value for a MaybeAsync with a value', () => {
+    test('returns the inner value for a MaybeAsync with a value', async () => {
       const value = 1;
       const sut = MaybeAsync.some(value);
 
-      expect(sut.getValueOrThrow()).resolves.toBe(value);
+      await expect(sut.getValueOrThrow()).resolves.toBe(value);
     });
 
-    test('throw an error for a MaybeAsync with no value', () => {
+    test('throw an error for a MaybeAsync with no value', async () => {
       const sut = MaybeAsync.none();
 
-      expect(() => sut.getValueOrThrow()).rejects.toThrowError('No value');
+      await expect(() => sut.getValueOrThrow()).rejects.toThrowError(
+        'No value'
+      );
     });
   });
 });
