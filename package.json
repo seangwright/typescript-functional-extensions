@@ -1,4 +1,5 @@
 {
+  "type": "module",
   "name": "typescript-functional-extensions",
   "description": "A TypeScript implementation of synchronous and asynchronous Maybe and Result monads",
   "keywords": [
