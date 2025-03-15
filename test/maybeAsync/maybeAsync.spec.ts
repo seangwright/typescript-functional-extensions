@@ -8,18 +8,14 @@ describe('MaybeAsync', () => {
       const some = Maybe.some(value);
       const sut = MaybeAsync.from(some);
 
-      const innerMaybe = await sut.toPromise();
-
-      expect(innerMaybe).toHaveValue(value);
+      await expect(sut.toPromise()).resolves.toHaveValue(value);
     });
 
     test('constructs with a Maybe.none value', async () => {
       const none = Maybe.none();
       const sut = MaybeAsync.from(none);
 
-      const innerMaybe = await sut.toPromise();
-
-      expect(innerMaybe).toHaveNoValue();
+      await expect(sut.toPromise()).resolves.toHaveNoValue();
     });
 
     test('constructs with a Promise Maybe.some value', async () => {
@@ -27,18 +23,14 @@ describe('MaybeAsync', () => {
       const some = Maybe.some(value);
       const sut = MaybeAsync.from(Promise.resolve(some));
 
-      const innerMaybe = await sut.toPromise();
-
-      expect(innerMaybe).toHaveValue(value);
+      await expect(sut.toPromise()).resolves.toHaveValue(value);
     });
 
     test('constructs with a Promise Maybe.none value', async () => {
       const none = Maybe.none();
       const sut = MaybeAsync.from(Promise.resolve(none));
 
-      const innerMaybe = await sut.toPromise();
-
-      expect(innerMaybe).toHaveNoValue();
+      await expect(sut.toPromise()).resolves.toHaveNoValue();
     });
 
     test('constructs with a rejected Promise Maybe.some value', async () => {
@@ -53,9 +45,7 @@ describe('MaybeAsync', () => {
         Promise.resolve<string | undefined>(undefined)
       );
 
-      const innerMaybe = await sut.toPromise();
-
-      expect(innerMaybe).toHaveNoValue();
+      await expect(sut.toPromise()).resolves.toHaveNoValue();
     });
   });
 
@@ -64,9 +54,7 @@ describe('MaybeAsync', () => {
       const value = 1;
       const sut = MaybeAsync.some(value);
 
-      const innerMaybe = await sut.toPromise();
-
-      expect(innerMaybe).toHaveValue(value);
+      await expect(sut.toPromise()).resolves.toHaveValue(value);
     });
   });
 
@@ -74,9 +62,7 @@ describe('MaybeAsync', () => {
     test('constructs with no value', async () => {
       const sut = MaybeAsync.none();
 
-      const innerMaybe = await sut.toPromise();
-
-      expect(innerMaybe).toHaveNoValue();
+      await expect(sut.toPromise()).resolves.toHaveNoValue();
     });
   });
 
@@ -84,17 +70,13 @@ describe('MaybeAsync', () => {
     test('returns a resolved Promise of true when there is a value', async () => {
       const sut = MaybeAsync.some(1);
 
-      const result = await sut.hasValue;
-
-      expect(result).toBe(true);
+      await expect(sut.hasValue).resolves.toBe(true);
     });
 
     test('returns a resolved Promise of false when there is no value', async () => {
       const sut = MaybeAsync.none();
 
-      const result = await sut.hasValue;
-
-      expect(result).toBe(false);
+      await expect(sut.hasValue).resolves.toBe(false);
     });
   });
 
