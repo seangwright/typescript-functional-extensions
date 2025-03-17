@@ -20,9 +20,45 @@ import {
 } from './utilities.js';
 
 /**
+ * Allows to extract the Value of the given Result-Type
+ * e.g. ResultValueOf<Result<string>> => string
+ */
+export type ResultAsyncValueOf<T> = T extends ResultAsync<
+  infer TResultAsyncValue
+>
+  ? TResultAsyncValue
+  : unknown;
+
+/**
  * Represents and asynchronous Result that could succeed with a value or fail with an error
  */
 export class ResultAsync<TValue = Unit, TError = string> {
+  /**
+   * Combines several results (and any error messages) into a single result.
+   * The returned result will be a failure if any of the input results are failures.
+   *
+   * @param results The Results to be combined.
+   * @returns A Result that is a success when all the input results are also successes.
+   */
+  static combine<T extends Record<string, ResultAsync<unknown>>>(
+    results: T
+  ): ResultAsync<{ [K in keyof T]: ResultAsyncValueOf<T[K]> }> {
+    const promises = Object.values(results).map((result) => result.toPromise());
+
+    const aggregatedPromise = Promise.all(promises).then((promiseResults) => {
+      return Object.keys(results).reduce((resultAsync, key, currentIndex) => {
+        resultAsync[key] = promiseResults[currentIndex].getValueOrThrow();
+        return resultAsync;
+      }, {} as { [key: string]: unknown });
+    });
+
+    return ResultAsync.from(
+      aggregatedPromise as Promise<
+        Some<{ [K in keyof T]: ResultAsyncValueOf<T[K]> }>
+      >
+    );
+  }
+
   /**
    * Creates a new ResultAsync from the given Result
    * @param value a successful or failed Result
