@@ -29,6 +29,10 @@ export type ResultAsyncValueOf<T> = T extends ResultAsync<
   ? TResultAsyncValue
   : unknown;
 
+export class PromiseRejection {
+  constructor(public reason: string) {}
+}
+
 /**
  * Represents and asynchronous Result that could succeed with a value or fail with an error
  */
@@ -43,19 +47,39 @@ export class ResultAsync<TValue = Unit, TError = string> {
   static combine<T extends Record<string, ResultAsync<unknown>>>(
     results: T
   ): ResultAsync<{ [K in keyof T]: ResultAsyncValueOf<T[K]> }> {
-    const promises = Object.values(results).map((result) => result.toPromise());
+    const promises = Object.values(results).map((result) =>
+      result.toPromise().catch((reason) => new PromiseRejection(reason))
+    );
 
     const aggregatedPromise = Promise.all(promises).then((promiseResults) => {
-      return Object.keys(results).reduce((resultAsync, key, currentIndex) => {
-        resultAsync[key] = promiseResults[currentIndex].getValueOrThrow();
-        return resultAsync;
-      }, {} as { [key: string]: unknown });
+      const errors: string[] = [];
+
+      const mappedResults = Object.keys(results).reduce(
+        (resultAsync, key, currentIndex) => {
+          const currentResult = promiseResults[currentIndex];
+
+          if (currentResult instanceof PromiseRejection) {
+            errors.push(currentResult.reason);
+          } else {
+            resultAsync[key] = currentResult.getValueOrThrow();
+          }
+          return resultAsync;
+        },
+        {} as { [key: string]: unknown }
+      );
+
+      if (errors.length) {
+        throw new Error(errors.join(', '));
+      }
+
+      return mappedResults;
     });
 
-    return ResultAsync.from(
+    return ResultAsync.try(
       aggregatedPromise as Promise<
         Some<{ [K in keyof T]: ResultAsyncValueOf<T[K]> }>
-      >
+      >,
+      (e) => (typeof e === 'string' ? e : 'An error occurred')
     );
   }
 
