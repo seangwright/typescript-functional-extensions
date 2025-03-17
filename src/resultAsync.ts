@@ -60,8 +60,10 @@ export class ResultAsync<TValue = Unit, TError = string> {
 
           if (currentResult instanceof PromiseRejection) {
             errors.push(currentResult.reason);
-          } else {
+          } else if (currentResult.isSuccess) {
             resultAsync[key] = currentResult.getValueOrThrow();
+          } else if (currentResult.isFailure) {
+            errors.push(currentResult.getErrorOrThrow());
           }
           return resultAsync;
         },
@@ -79,7 +81,7 @@ export class ResultAsync<TValue = Unit, TError = string> {
       aggregatedPromise as Promise<
         Some<{ [K in keyof T]: ResultAsyncValueOf<T[K]> }>
       >,
-      (e) => (typeof e === 'string' ? e : 'An error occurred')
+      (e) => (e instanceof Error ? e.message : 'An unknown error occurred')
     );
   }
 
