@@ -47,10 +47,19 @@ export class ResultAsync<TValue = Unit, TError = string> {
    * @returns A Result that is a success when all the input results are also successes.
    */
   static combine<
-    T extends Record<string, ResultAsync<unknown> | Promise<unknown>>
+    T extends Record<
+      string,
+      Result<unknown> | ResultAsync<unknown> | Promise<unknown>
+    >
   >(results: T): ResultAsync<{ [K in keyof T]: ValueOf<T[K]> }> {
     const promises = Object.entries(results).map(([key, resultOrPromise]) =>
-      resultOrPromise instanceof ResultAsync
+      resultOrPromise instanceof Result
+        ? Promise.resolve(
+            resultOrPromise.mapError(
+              (failure) => `Failure in "${key}": ${failure}`
+            )
+          )
+        : resultOrPromise instanceof ResultAsync
         ? resultOrPromise
             .mapError((failure) => `Failure in "${key}": ${failure}`)
             .toPromise()

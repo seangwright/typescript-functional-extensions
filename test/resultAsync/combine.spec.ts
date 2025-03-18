@@ -1,3 +1,4 @@
+import { Result } from '@/src/result';
 import { ResultAsync } from '@/src/resultAsync';
 
 describe('ResultAsync', () => {
@@ -100,6 +101,61 @@ describe('ResultAsync', () => {
     await expect(result.isFailure).resolves.toEqual(true);
     await expect(result.getErrorOrThrow()).resolves.toEqual(
       'Failure in "failure": 💥'
+    );
+  });
+
+  it('succeeds with one successful Result', async () => {
+    const success = ResultAsync.success('✅');
+
+    const result = ResultAsync.combine({ success });
+
+    await expect(result.getValueOrThrow()).resolves.toEqual({
+      success: '✅',
+    });
+  });
+
+  it('succeeds with one successful Result', async () => {
+    const result = ResultAsync.combine({
+      first: Result.success('✅'),
+      second: Result.success('✅'),
+    });
+
+    await expect(result.getValueOrThrow()).resolves.toEqual({
+      first: '✅',
+      second: '✅',
+    });
+  });
+
+  it('fails with one failed Result', async () => {
+    const failure = Result.failure('💥');
+
+    const result = ResultAsync.combine({ failure });
+
+    await expect(result.isFailure).resolves.toEqual(true);
+  });
+
+  it('fails with one successful and one failed ResultAsync', async () => {
+    const result = ResultAsync.combine({
+      success: Result.success('✅'),
+      failure: Result.failure('💥'),
+    });
+
+    await expect(result.isFailure).resolves.toEqual(true);
+    await expect(result.getErrorOrThrow()).resolves.toEqual(
+      'Failure in "failure": 💥'
+    );
+  });
+
+  it('fails with one successful and one failed ResultAsync', async () => {
+    const result = ResultAsync.combine({
+      result: Result.success('✅'),
+      promise: Promise.resolve('✅'),
+      resultAsync: ResultAsync.failure('💥'),
+    });
+
+    await expect(result.isFailure).resolves.toEqual(true);
+    await expect(result.getErrorOrThrow()).resolves.toEqual(
+      'Failure in "resultAsync": 💥'
     );
   });
 });
