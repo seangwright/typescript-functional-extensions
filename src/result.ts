@@ -1,4 +1,4 @@
-import { ResultAsync } from './resultAsync.js';
+import { type OperationValue, ResultAsync } from './resultAsync.js';
 import { Unit } from './unit.js';
 import {
   Action,
@@ -83,6 +83,19 @@ export class Result<TValue = Unit, TError = string> {
       .join(', ');
 
     return Result.failure(errorMessages);
+  }
+
+  static combineAsync<
+    TOperationRecord extends Record<
+      string,
+      Result<unknown> | ResultAsync<unknown> | Promise<unknown>
+    >
+  >(
+    record: TOperationRecord
+  ): ResultAsync<{
+    [K in keyof TOperationRecord]: OperationValue<TOperationRecord[K]>;
+  }> {
+    return ResultAsync.combine(record);
   }
 
   /**
@@ -692,7 +705,7 @@ export class Result<TValue = Unit, TError = string> {
   /**
    * Maps the value successful Result to a new async value wrapped in a ResultAsync
    * @param projection a function given the value of the current Result which returns a Promise of some value
-   
+
    * @returns
    */
   mapAsync<TNewValue>(
@@ -706,7 +719,7 @@ export class Result<TValue = Unit, TError = string> {
   /**
    * Maps the error of a failed Result to a new async value wrapped in a ResultAsync
    * @param projection a function given the error of the current Result which returns a Promise of some value
-   
+
    * @returns
    */
   mapFailureAsync(
@@ -733,7 +746,7 @@ export class Result<TValue = Unit, TError = string> {
   /**
    * Maps a successful Result to a new ResultAsync
    * @param projection
-   
+
    */
   bindAsync<TNewValue>(
     projection: FunctionOfTtoK<TValue, Promise<Result<TNewValue, TError>>>
@@ -748,7 +761,7 @@ export class Result<TValue = Unit, TError = string> {
   /**
    * Maps a successful Result to a new ResultAsync
    * @param projection
-   
+
    * @returns
    */
   bindAsync<TNewValue>(
@@ -856,7 +869,7 @@ export class Result<TValue = Unit, TError = string> {
   /**
    * Executes an async action if the Result succeeded
    * @param action a function given the Result's value returns a Promise
-   
+
    * @returns a ResultAsync
    */
   tapAsync(action: AsyncActionOfT<TValue>): ResultAsync<TValue, TError> {
