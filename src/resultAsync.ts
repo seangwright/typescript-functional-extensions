@@ -51,37 +51,36 @@ export class ResultAsync<TValue = Unit, TError = string> {
       result.toPromise().catch((reason) => new PromiseRejection(reason))
     );
 
-    const aggregatedPromise = Promise.all(promises).then((promiseResults) => {
-      const errors: string[] = [];
-
-      const mappedResults = Object.keys(results).reduce(
-        (resultAsync, key, currentIndex) => {
+    const allPromises = Promise.all(promises).then((promiseResults) => {
+      const valuesAndErrors = Object.keys(results).reduce(
+        (sink, key, currentIndex) => {
           const currentResult = promiseResults[currentIndex];
 
           if (currentResult instanceof PromiseRejection) {
-            errors.push(currentResult.reason);
-          } else if (currentResult.isSuccess) {
-            resultAsync[key] = currentResult.getValueOrThrow();
+            sink.errors.push(currentResult.reason);
           } else if (currentResult.isFailure) {
-            errors.push(currentResult.getErrorOrThrow());
+            sink.errors.push(currentResult.getErrorOrThrow());
+          } else if (currentResult.isSuccess) {
+            sink.values[key] = currentResult.getValueOrThrow();
           }
-          return resultAsync;
+
+          return sink;
         },
-        {} as { [key: string]: unknown }
+        {
+          errors: [],
+          values: {},
+        } as { errors: string[]; values: { [key: string]: unknown } }
       );
 
-      if (errors.length) {
-        throw new Error(errors.join(', '));
-      }
-
-      return mappedResults;
+      return valuesAndErrors.errors.length
+        ? Result.failure(valuesAndErrors.errors.join(', '))
+        : Result.success(valuesAndErrors.values);
     });
 
-    return ResultAsync.try(
-      aggregatedPromise as Promise<
-        Some<{ [K in keyof T]: ResultAsyncValueOf<T[K]> }>
-      >,
-      (e) => (e instanceof Error ? e.message : 'An unknown error occurred')
+    return ResultAsync.from(
+      allPromises as Promise<
+        Result<{ [K in keyof T]: ResultAsyncValueOf<T[K]> }>
+      >
     );
   }
 
