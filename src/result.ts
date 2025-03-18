@@ -1,4 +1,4 @@
-import { type ResultValue, ResultAsync } from './resultAsync.js';
+import { ResultAsync } from './resultAsync.js';
 import { Unit } from './unit.js';
 import {
   Action,
@@ -96,15 +96,8 @@ export class Result<TValue = Unit, TError = string> {
   }
 
   static combineAsync<
-    TOperationRecord extends Record<
-      string,
-      Result<unknown> | ResultAsync<unknown> | Promise<unknown>
-    >
-  >(
-    record: TOperationRecord
-  ): ResultAsync<{
-    [K in keyof TOperationRecord]: ResultValue<TOperationRecord[K]>;
-  }> {
+    TResultRecord extends Record<string, Result<unknown> | ResultAsync<unknown>>
+  >(record: TResultRecord): ResultAsync<ResultRecord<TResultRecord>> {
     return ResultAsync.combine(record);
   }
 
