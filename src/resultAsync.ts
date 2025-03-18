@@ -23,11 +23,13 @@ import {
  * Allows to extract the Value of the given Result-Type
  * e.g. ResultValueOf<Result<string>> => string
  */
-export type ResultAsyncValueOf<T> = T extends ResultAsync<
-  infer TResultAsyncValue
->
+export type ValueOf<T> = T extends ResultAsync<infer TResultAsyncValue>
   ? TResultAsyncValue
-  : unknown;
+  : T extends Promise<infer TPromiseValue>
+  ? TPromiseValue
+  : T extends Result<infer TResultValue>
+  ? TResultValue
+  : never;
 
 export class PromiseRejection {
   constructor(public reason: string) {}
@@ -44,10 +46,24 @@ export class ResultAsync<TValue = Unit, TError = string> {
    * @param results The Results to be combined.
    * @returns A Result that is a success when all the input results are also successes.
    */
-  static combine<T extends Record<string, ResultAsync<unknown>>>(
-    results: T
-  ): ResultAsync<{ [K in keyof T]: ResultAsyncValueOf<T[K]> }> {
-    const promises = Object.values(results).map((result) => result.toPromise());
+  static combine<
+    T extends Record<string, ResultAsync<unknown> | Promise<unknown>>
+  >(results: T): ResultAsync<{ [K in keyof T]: ValueOf<T[K]> }> {
+    const promises = Object.entries(results).map(([key, resultOrPromise]) =>
+      resultOrPromise instanceof ResultAsync
+        ? resultOrPromise
+            .mapError((failure) => `Failure in "${key}": ${failure}`)
+            .toPromise()
+        : resultOrPromise
+            .then((v) => Result.success(v))
+            .catch((e) =>
+              Result.failure(
+                `Failure in "${key}": ${
+                  e instanceof Error ? e.message : 'Unknown error'
+                }`
+              )
+            )
+    );
 
     const allPromises = Promise.all(promises).then((promiseResults) => {
       const valuesAndErrors = Object.keys(results).reduce(
@@ -76,9 +92,7 @@ export class ResultAsync<TValue = Unit, TError = string> {
     });
 
     return ResultAsync.from(
-      allPromises as Promise<
-        Result<{ [K in keyof T]: ResultAsyncValueOf<T[K]> }>
-      >
+      allPromises as Promise<Result<{ [K in keyof T]: ValueOf<T[K]> }>>
     );
   }
 
