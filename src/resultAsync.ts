@@ -20,10 +20,12 @@ import {
 } from './utilities.js';
 
 /**
- * Allows to extract the Value of the given Result-Type
- * e.g. ResultValueOf<Result<string>> => string
+ * Allows to extract the Value of the given "operation"
+ * An operation can be a Result, ResultAsync or a Promise
+ *
+ * @example ResultValueOf<Result<string>> => string
  */
-export type ValueOf<T> = T extends ResultAsync<infer TResultAsyncValue>
+export type OperationValue<T> = T extends ResultAsync<infer TResultAsyncValue>
   ? TResultAsyncValue
   : T extends Promise<infer TPromiseValue>
   ? TPromiseValue
@@ -43,16 +45,20 @@ export class ResultAsync<TValue = Unit, TError = string> {
    * Combines several results (and any error messages) into a single result.
    * The returned result will be a failure if any of the input results are failures.
    *
-   * @param results The Results to be combined.
+   * @param record The Results to be combined.
    * @returns A Result that is a success when all the input results are also successes.
    */
   static combine<
-    T extends Record<
+    TOperationRecord extends Record<
       string,
       Result<unknown> | ResultAsync<unknown> | Promise<unknown>
     >
-  >(results: T): ResultAsync<{ [K in keyof T]: ValueOf<T[K]> }> {
-    const promises = Object.entries(results).map(([key, resultOrPromise]) =>
+  >(
+    record: TOperationRecord
+  ): ResultAsync<{
+    [K in keyof TOperationRecord]: OperationValue<TOperationRecord[K]>;
+  }> {
+    const promises = Object.entries(record).map(([key, resultOrPromise]) =>
       resultOrPromise instanceof Result
         ? Promise.resolve(
             resultOrPromise.mapError(
@@ -75,7 +81,7 @@ export class ResultAsync<TValue = Unit, TError = string> {
     );
 
     const allPromises = Promise.all(promises).then((promiseResults) => {
-      const valuesAndErrors = Object.keys(results).reduce(
+      const valuesAndErrors = Object.keys(record).reduce(
         (sink, key, currentIndex) => {
           const currentResult = promiseResults[currentIndex];
 
@@ -101,7 +107,11 @@ export class ResultAsync<TValue = Unit, TError = string> {
     });
 
     return ResultAsync.from(
-      allPromises as Promise<Result<{ [K in keyof T]: ValueOf<T[K]> }>>
+      allPromises as Promise<
+        Result<{
+          [K in keyof TOperationRecord]: OperationValue<TOperationRecord[K]>;
+        }>
+      >
     );
   }
 
