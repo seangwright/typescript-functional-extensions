@@ -1,4 +1,4 @@
-import { Result, type ResultValue } from './result.js';
+import { Result, type ResultRecord } from './result.js';
 import { Unit } from './unit.js';
 import {
   Action,
@@ -31,20 +31,13 @@ export class ResultAsync<TValue = Unit, TError = string> {
    * @returns A Result that is a success when all the input results are also successes.
    */
   static combine<
-    TOperationRecord extends Record<
-      string,
-      Result<unknown> | ResultAsync<unknown>
-    >
-  >(
-    results: TOperationRecord
-  ): ResultAsync<{
-    [K in keyof TOperationRecord]: ResultValue<TOperationRecord[K]>;
-  }> {
+    TResultRecord extends Record<string, Result<unknown> | ResultAsync<unknown>>
+  >(results: TResultRecord): ResultAsync<ResultRecord<TResultRecord>> {
     const promises = Object.values(results).map((result) =>
       result instanceof Result ? Promise.resolve(result) : result.toPromise()
     );
 
-    const allPromises = Promise.all(promises).then((resolvedResults) => {
+    const promiseResult = Promise.all(promises).then((resolvedResults) => {
       const valuesAndErrors = Object.keys(results).reduce(
         (sink, key, index) => {
           const resolvedResult = resolvedResults[index];
@@ -67,11 +60,7 @@ export class ResultAsync<TValue = Unit, TError = string> {
     });
 
     return ResultAsync.from(
-      allPromises as Promise<
-        Result<{
-          [K in keyof TOperationRecord]: ResultValue<TOperationRecord[K]>;
-        }>
-      >
+      promiseResult as Promise<Result<ResultRecord<TResultRecord>>>
     );
   }
 

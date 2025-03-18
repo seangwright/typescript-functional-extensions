@@ -34,6 +34,10 @@ export type ResultValue<T> = T extends Result<infer TResultValue>
   ? TResultAsyncValue
   : never;
 
+export type ResultRecord<TResultRecord> = {
+  [K in keyof TResultRecord]: ResultValue<TResultRecord[K]>;
+};
+
 /**
  * Represents a successful Result operation.
  */
@@ -59,9 +63,9 @@ export class Result<TValue = Unit, TError = string> {
    * @param results The Results to be combined.
    * @returns A Result that is a success when all the input results are also successes.
    */
-  static combine<T extends Record<string, Result<unknown>>>(
-    results: T
-  ): Result<{ [K in keyof T]: ResultValue<T[K]> }> {
+  static combine<TResultRecord extends Record<string, Result<unknown>>>(
+    results: TResultRecord
+  ): Result<ResultRecord<TResultRecord>> {
     const resultEntries = Object.entries(results);
 
     const failedResults = resultEntries.filter(
@@ -78,7 +82,9 @@ export class Result<TValue = Unit, TError = string> {
       }, {} as { [key: string]: unknown });
 
       return Result.success(
-        values as Some<{ [K in keyof T]: ResultValue<T[K]> }>
+        values as Some<{
+          [K in keyof TResultRecord]: ResultValue<TResultRecord[K]>;
+        }>
       );
     }
 
