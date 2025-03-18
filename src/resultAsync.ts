@@ -1,4 +1,4 @@
-import { Result } from './result.js';
+import { Result, type ResultValue } from './result.js';
 import { Unit } from './unit.js';
 import {
   Action,
@@ -20,20 +20,6 @@ import {
 } from './utilities.js';
 
 /**
- * Allows to extract the Value of the given "operation"
- * An operation can be a Result, ResultAsync or a Promise
- *
- * @example ResultValueOf<Result<string>> => string
- */
-export type OperationValue<T> = T extends ResultAsync<infer TResultAsyncValue>
-  ? TResultAsyncValue
-  : T extends Promise<infer TPromiseValue>
-  ? TPromiseValue
-  : T extends Result<infer TResultValue>
-  ? TResultValue
-  : never;
-
-/**
  * Represents and asynchronous Result that could succeed with a value or fail with an error
  */
 export class ResultAsync<TValue = Unit, TError = string> {
@@ -41,41 +27,31 @@ export class ResultAsync<TValue = Unit, TError = string> {
    * Combines several results (and any error messages) into a single result.
    * The returned result will be a failure if any of the input results are failures.
    *
-   * @param record The Results to be combined.
+   * @param results The Results to be combined.
    * @returns A Result that is a success when all the input results are also successes.
    */
   static combine<
     TOperationRecord extends Record<
       string,
-      Result<unknown> | ResultAsync<unknown> | Promise<unknown>
+      Result<unknown> | ResultAsync<unknown>
     >
   >(
-    record: TOperationRecord
+    results: TOperationRecord
   ): ResultAsync<{
-    [K in keyof TOperationRecord]: OperationValue<TOperationRecord[K]>;
+    [K in keyof TOperationRecord]: ResultValue<TOperationRecord[K]>;
   }> {
-    const promises = Object.values(record).map((resultOrPromise) =>
-      resultOrPromise instanceof Result
-        ? Promise.resolve(resultOrPromise)
-        : resultOrPromise instanceof ResultAsync
-        ? resultOrPromise.toPromise()
-        : resultOrPromise
-            .then((v) => Result.success(v))
-            .catch((e) =>
-              Result.failure(e instanceof Error ? e.message : 'Unknown error')
-            )
+    const promises = Object.values(results).map((result) =>
+      result instanceof Result ? Promise.resolve(result) : result.toPromise()
     );
 
-    const allPromises = Promise.all(promises).then((promiseResults) => {
-      const valuesAndErrors = Object.keys(record).reduce(
-        (sink, key, currentIndex) => {
-          const currentResult = promiseResults[currentIndex];
+    const allPromises = Promise.all(promises).then((resolvedResults) => {
+      const valuesAndErrors = Object.keys(results).reduce(
+        (sink, key, index) => {
+          const resolvedResult = resolvedResults[index];
 
-          if (currentResult.isFailure) {
-            sink.errors.push(currentResult.getErrorOrThrow());
-          } else if (currentResult.isSuccess) {
-            sink.values[key] = currentResult.getValueOrThrow();
-          }
+          resolvedResult.isSuccess
+            ? (sink.values[key] = resolvedResult.getValueOrThrow())
+            : sink.errors.push(resolvedResult.getErrorOrThrow());
 
           return sink;
         },
@@ -93,7 +69,7 @@ export class ResultAsync<TValue = Unit, TError = string> {
     return ResultAsync.from(
       allPromises as Promise<
         Result<{
-          [K in keyof TOperationRecord]: OperationValue<TOperationRecord[K]>;
+          [K in keyof TOperationRecord]: ResultValue<TOperationRecord[K]>;
         }>
       >
     );

@@ -1,4 +1,4 @@
-import { type OperationValue, ResultAsync } from './resultAsync.js';
+import { type ResultValue, ResultAsync } from './resultAsync.js';
 import { Unit } from './unit.js';
 import {
   Action,
@@ -23,12 +23,16 @@ import {
 } from './utilities.js';
 
 /**
- * Allows to extract the Value of the given Result-Type
- * e.g. ResultValueOf<Result<string>> => string
+ * Allows to extract the Value of the given "operation"
+ * An operation can be a Result, ResultAsync or a Promise
+ *
+ * @example ResultValue<Result<string>> => string
  */
-export type ResultValueOf<T> = T extends Result<infer TResultValue>
+export type ResultValue<T> = T extends Result<infer TResultValue>
   ? TResultValue
-  : unknown;
+  : T extends ResultAsync<infer TResultAsyncValue>
+  ? TResultAsyncValue
+  : never;
 
 /**
  * Represents a successful Result operation.
@@ -57,7 +61,7 @@ export class Result<TValue = Unit, TError = string> {
    */
   static combine<T extends Record<string, Result<unknown>>>(
     results: T
-  ): Result<{ [K in keyof T]: ResultValueOf<T[K]> }> {
+  ): Result<{ [K in keyof T]: ResultValue<T[K]> }> {
     const resultEntries = Object.entries(results);
 
     const failedResults = resultEntries.filter(
@@ -74,7 +78,7 @@ export class Result<TValue = Unit, TError = string> {
       }, {} as { [key: string]: unknown });
 
       return Result.success(
-        values as Some<{ [K in keyof T]: ResultValueOf<T[K]> }>
+        values as Some<{ [K in keyof T]: ResultValue<T[K]> }>
       );
     }
 
@@ -93,7 +97,7 @@ export class Result<TValue = Unit, TError = string> {
   >(
     record: TOperationRecord
   ): ResultAsync<{
-    [K in keyof TOperationRecord]: OperationValue<TOperationRecord[K]>;
+    [K in keyof TOperationRecord]: ResultValue<TOperationRecord[K]>;
   }> {
     return ResultAsync.combine(record);
   }
