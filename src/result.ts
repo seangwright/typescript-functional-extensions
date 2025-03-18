@@ -95,10 +95,10 @@ export class Result<TValue = Unit, TError = string> {
     return Result.failure(errorMessages);
   }
 
-  static combineAsync<
+  static combineInOrderAsync<
     TResultRecord extends Record<string, Result<unknown> | ResultAsync<unknown>>
   >(record: TResultRecord): ResultAsync<ResultRecord<TResultRecord>> {
-    return ResultAsync.combine(record);
+    return ResultAsync.combineInOrder(record);
   }
 
   /**

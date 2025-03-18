@@ -1,12 +1,15 @@
 import { Result } from '@/src/result';
 
 describe('Result', () => {
-  describe('combineAsync', () => {
+  describe('combineInOrderAsync', () => {
     test('fails if one result fails', async () => {
       const success = Result.success(1);
       const failure = Result.failure('1st Error');
 
-      const sut = await Result.combineAsync({ success, failure }).toPromise();
+      const sut = await Result.combineInOrderAsync({
+        success,
+        failure,
+      }).toPromise();
 
       expect(sut).toFailWith('1st Error');
     });
@@ -14,7 +17,7 @@ describe('Result', () => {
     test('succeeds if one results succeed', async () => {
       const success = Result.success(1);
 
-      const sut = await Result.combineAsync({ success }).toPromise();
+      const sut = await Result.combineInOrderAsync({ success }).toPromise();
 
       expect(sut).toSucceed();
     });
@@ -25,7 +28,7 @@ describe('Result', () => {
       const failure_2_message = '2nd Error';
       const failure_2 = Result.failure(failure_2_message);
 
-      const sut = await Result.combineAsync({
+      const sut = await Result.combineInOrderAsync({
         failure_1,
         failure_2,
       }).toPromise();

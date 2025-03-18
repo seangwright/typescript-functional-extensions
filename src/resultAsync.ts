@@ -27,20 +27,23 @@ export class ResultAsync<TValue = Unit, TError = string> {
    * Combines several results (and any error messages) into a single result.
    * The returned result will be a failure if any of the input results are failures.
    *
+   * Asynchronous operations are executed one after another.
+   *
    * @param results The Results to be combined.
    * @returns A Result that is a success when all the input results are also successes.
    */
-  static combine<
+  static combineInOrder<
     TResultRecord extends Record<string, Result<unknown> | ResultAsync<unknown>>
   >(results: TResultRecord): ResultAsync<ResultRecord<TResultRecord>> {
-    const promises = Object.values(results).map((result) =>
-      result instanceof Result ? Promise.resolve(result) : result.toPromise()
-    );
+    const entries = Object.entries(results);
 
-    const promiseResult = Promise.all(promises).then((resolvedResults) => {
-      const valuesAndErrors = Object.keys(results).reduce(
-        (sink, key, index) => {
-          const resolvedResult = resolvedResults[index];
+    const promiseResult = entries
+      .reduce(
+        async (accumulator, [key, result]) => {
+          const sink = await accumulator;
+
+          const resolvedResult =
+            result instanceof Result ? result : await result.toPromise();
 
           resolvedResult.isSuccess
             ? (sink.values[key] = resolvedResult.getValueOrThrow())
@@ -48,16 +51,16 @@ export class ResultAsync<TValue = Unit, TError = string> {
 
           return sink;
         },
-        {
+        Promise.resolve({
           errors: [],
           values: {},
-        } as { errors: string[]; values: { [key: string]: unknown } }
+        } as { errors: string[]; values: { [key: string]: unknown } })
+      )
+      .then((valuesAndErrors) =>
+        valuesAndErrors.errors.length
+          ? Result.failure(valuesAndErrors.errors.join(', '))
+          : Result.success(valuesAndErrors.values)
       );
-
-      return valuesAndErrors.errors.length
-        ? Result.failure(valuesAndErrors.errors.join(', '))
-        : Result.success(valuesAndErrors.values);
-    });
 
     return ResultAsync.from(
       promiseResult as Promise<Result<ResultRecord<TResultRecord>>>
