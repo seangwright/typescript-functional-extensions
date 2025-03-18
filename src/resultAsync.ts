@@ -54,7 +54,7 @@ export class ResultAsync<TValue = Unit, TError = string> {
   ): ResultAsync<{
     [K in keyof TOperationRecord]: OperationValue<TOperationRecord[K]>;
   }> {
-    const promises = Object.entries(record).map(([key, resultOrPromise]) =>
+    const promises = Object.values(record).map((resultOrPromise) =>
       resultOrPromise instanceof Result
         ? Promise.resolve(resultOrPromise)
         : resultOrPromise instanceof ResultAsync
