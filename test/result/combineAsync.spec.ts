@@ -8,7 +8,7 @@ describe('Result', () => {
 
       const sut = await Result.combineAsync({ success, failure }).toPromise();
 
-      expect(sut).toFailWith('Failure in "failure": 1st Error');
+      expect(sut).toFailWith('1st Error');
     });
 
     test('succeeds if one results succeed', async () => {
@@ -30,9 +30,7 @@ describe('Result', () => {
         failure_2,
       }).toPromise();
 
-      expect(sut).toFailWith(
-        `Failure in "failure_1": 1st Error, Failure in "failure_2": 2nd Error`
-      );
+      expect(sut).toFailWith(`${failure_1_message}, ${failure_2_message}`);
     });
   });
 });

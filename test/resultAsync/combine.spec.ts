@@ -40,9 +40,7 @@ describe('ResultAsync', () => {
       });
 
       await expect(result.isFailure).resolves.toEqual(true);
-      await expect(result.getErrorOrThrow()).resolves.toEqual(
-        'Failure in "failure": 💥'
-      );
+      await expect(result.getErrorOrThrow()).resolves.toEqual('💥');
     });
   });
 
@@ -75,9 +73,7 @@ describe('ResultAsync', () => {
     });
 
     await expect(result.isFailure).resolves.toEqual(true);
-    await expect(result.getErrorOrThrow()).resolves.toEqual(
-      'Failure in "failure": Unknown error'
-    );
+    await expect(result.getErrorOrThrow()).resolves.toEqual('Unknown error');
   });
 
   it('fails with one successful and one failed Promise', async () => {
@@ -87,9 +83,7 @@ describe('ResultAsync', () => {
     });
 
     await expect(result.isFailure).resolves.toEqual(true);
-    await expect(result.getErrorOrThrow()).resolves.toEqual(
-      'Failure in "failure": 💥'
-    );
+    await expect(result.getErrorOrThrow()).resolves.toEqual('💥');
   });
 
   it('fails with one successful Promise and one failed Result', async () => {
@@ -99,9 +93,7 @@ describe('ResultAsync', () => {
     });
 
     await expect(result.isFailure).resolves.toEqual(true);
-    await expect(result.getErrorOrThrow()).resolves.toEqual(
-      'Failure in "failure": 💥'
-    );
+    await expect(result.getErrorOrThrow()).resolves.toEqual('💥');
   });
 
   it('succeeds with one successful Result', async () => {
@@ -141,9 +133,7 @@ describe('ResultAsync', () => {
     });
 
     await expect(result.isFailure).resolves.toEqual(true);
-    await expect(result.getErrorOrThrow()).resolves.toEqual(
-      'Failure in "failure": 💥'
-    );
+    await expect(result.getErrorOrThrow()).resolves.toEqual('💥');
   });
 
   it('fails with one successful and one failed ResultAsync', async () => {
@@ -154,8 +144,6 @@ describe('ResultAsync', () => {
     });
 
     await expect(result.isFailure).resolves.toEqual(true);
-    await expect(result.getErrorOrThrow()).resolves.toEqual(
-      'Failure in "resultAsync": 💥'
-    );
+    await expect(result.getErrorOrThrow()).resolves.toEqual('💥');
   });
 });

@@ -33,10 +33,6 @@ export type OperationValue<T> = T extends ResultAsync<infer TResultAsyncValue>
   ? TResultValue
   : never;
 
-export class PromiseRejection {
-  constructor(public reason: string) {}
-}
-
 /**
  * Represents and asynchronous Result that could succeed with a value or fail with an error
  */
@@ -60,23 +56,13 @@ export class ResultAsync<TValue = Unit, TError = string> {
   }> {
     const promises = Object.entries(record).map(([key, resultOrPromise]) =>
       resultOrPromise instanceof Result
-        ? Promise.resolve(
-            resultOrPromise.mapError(
-              (failure) => `Failure in "${key}": ${failure}`
-            )
-          )
+        ? Promise.resolve(resultOrPromise)
         : resultOrPromise instanceof ResultAsync
-        ? resultOrPromise
-            .mapError((failure) => `Failure in "${key}": ${failure}`)
-            .toPromise()
+        ? resultOrPromise.toPromise()
         : resultOrPromise
             .then((v) => Result.success(v))
             .catch((e) =>
-              Result.failure(
-                `Failure in "${key}": ${
-                  e instanceof Error ? e.message : 'Unknown error'
-                }`
-              )
+              Result.failure(e instanceof Error ? e.message : 'Unknown error')
             )
     );
 
@@ -85,9 +71,7 @@ export class ResultAsync<TValue = Unit, TError = string> {
         (sink, key, currentIndex) => {
           const currentResult = promiseResults[currentIndex];
 
-          if (currentResult instanceof PromiseRejection) {
-            sink.errors.push(currentResult.reason);
-          } else if (currentResult.isFailure) {
+          if (currentResult.isFailure) {
             sink.errors.push(currentResult.getErrorOrThrow());
           } else if (currentResult.isSuccess) {
             sink.values[key] = currentResult.getValueOrThrow();
