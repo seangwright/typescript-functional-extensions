@@ -4,146 +4,140 @@ import { ResultAsync } from '@/src/resultAsync';
 describe('ResultAsync', () => {
   describe('combine', () => {
     it('succeeds with one successful ResultAsync', async () => {
-      const success = ResultAsync.success('✅');
+      const sut = await ResultAsync.combine({
+        success: ResultAsync.success('✅'),
+      }).toPromise();
 
-      const result = ResultAsync.combine({ success });
-
-      await expect(result.getValueOrThrow()).resolves.toEqual({
+      expect(sut).toSucceedWith({
         success: '✅',
       });
     });
 
-    it('succeeds with one successful ResultAsync', async () => {
-      const result = ResultAsync.combine({
+    it('succeeds with two successful ResultAsync', async () => {
+      const sut = await ResultAsync.combine({
         first: ResultAsync.success('✅'),
         second: ResultAsync.success('✅'),
-      });
+      }).toPromise();
 
-      await expect(result.getValueOrThrow()).resolves.toEqual({
+      expect(sut).toSucceedWith({
         first: '✅',
         second: '✅',
       });
     });
 
     it('fails with one failed ResultAsync', async () => {
-      const failure = ResultAsync.failure('💥');
+      const sut = await ResultAsync.combine({
+        failure: ResultAsync.failure('💥'),
+      }).toPromise();
 
-      const result = ResultAsync.combine({ failure });
-
-      await expect(result.isFailure).resolves.toEqual(true);
+      expect(sut).toFailWith('💥');
     });
 
     it('fails with one successful and one failed ResultAsync', async () => {
-      const result = ResultAsync.combine({
+      const sut = await ResultAsync.combine({
         success: ResultAsync.success('✅'),
         failure: ResultAsync.failure('💥'),
+      }).toPromise();
+
+      expect(sut).toFailWith('💥');
+    });
+
+    it('succeeds with one successful Promise', async () => {
+      const sut = await ResultAsync.combine({
+        success: Promise.resolve('✅'),
+      }).toPromise();
+
+      expect(sut).toSucceedWith({
+        success: '✅',
       });
-
-      await expect(result.isFailure).resolves.toEqual(true);
-      await expect(result.getErrorOrThrow()).resolves.toEqual('💥');
-    });
-  });
-
-  it('succeeds with one successful Promise', async () => {
-    const success = Promise.resolve('✅');
-
-    const result = ResultAsync.combine({ success });
-
-    await expect(result.getValueOrThrow()).resolves.toEqual({
-      success: '✅',
-    });
-  });
-
-  it('succeeds with one successful Promises', async () => {
-    const result = ResultAsync.combine({
-      first: Promise.resolve('✅'),
-      second: Promise.resolve('✅'),
     });
 
-    await expect(result.getValueOrThrow()).resolves.toEqual({
-      first: '✅',
-      second: '✅',
-    });
-  });
+    it('succeeds with two successful Promises', async () => {
+      const sut = await ResultAsync.combine({
+        first: Promise.resolve('✅'),
+        second: Promise.resolve('✅'),
+      }).toPromise();
 
-  it('fails with one successful and one failed Promise', async () => {
-    const result = ResultAsync.combine({
-      success: Promise.resolve('✅'),
-      failure: Promise.reject('💥'),
-    });
-
-    await expect(result.isFailure).resolves.toEqual(true);
-    await expect(result.getErrorOrThrow()).resolves.toEqual('Unknown error');
-  });
-
-  it('fails with one successful and one failed Promise', async () => {
-    const result = ResultAsync.combine({
-      success: Promise.resolve('✅'),
-      failure: Promise.reject(new Error('💥')),
+      expect(sut).toSucceedWith({
+        first: '✅',
+        second: '✅',
+      });
     });
 
-    await expect(result.isFailure).resolves.toEqual(true);
-    await expect(result.getErrorOrThrow()).resolves.toEqual('💥');
-  });
+    it('fails with one successful and one failed Promise with unknown error', async () => {
+      const sut = await ResultAsync.combine({
+        success: Promise.resolve('✅'),
+        failure: Promise.reject('💥'),
+      }).toPromise();
 
-  it('fails with one successful Promise and one failed Result', async () => {
-    const result = ResultAsync.combine({
-      success: Promise.resolve('✅'),
-      failure: ResultAsync.failure('💥'),
+      expect(sut).toFailWith('Unknown error');
     });
 
-    await expect(result.isFailure).resolves.toEqual(true);
-    await expect(result.getErrorOrThrow()).resolves.toEqual('💥');
-  });
+    it('fails with one successful and one failed Promise with Error', async () => {
+      const sut = await ResultAsync.combine({
+        success: Promise.resolve('✅'),
+        failure: Promise.reject(new Error('💥')),
+      }).toPromise();
 
-  it('succeeds with one successful Result', async () => {
-    const success = ResultAsync.success('✅');
-
-    const result = ResultAsync.combine({ success });
-
-    await expect(result.getValueOrThrow()).resolves.toEqual({
-      success: '✅',
-    });
-  });
-
-  it('succeeds with one successful Result', async () => {
-    const result = ResultAsync.combine({
-      first: Result.success('✅'),
-      second: Result.success('✅'),
+      expect(sut).toFailWith('💥');
     });
 
-    await expect(result.getValueOrThrow()).resolves.toEqual({
-      first: '✅',
-      second: '✅',
-    });
-  });
+    it('fails with one successful Promise and one failed Result', async () => {
+      const sut = await ResultAsync.combine({
+        success: Promise.resolve('✅'),
+        failure: ResultAsync.failure('💥'),
+      }).toPromise();
 
-  it('fails with one failed Result', async () => {
-    const failure = Result.failure('💥');
-
-    const result = ResultAsync.combine({ failure });
-
-    await expect(result.isFailure).resolves.toEqual(true);
-  });
-
-  it('fails with one successful and one failed ResultAsync', async () => {
-    const result = ResultAsync.combine({
-      success: Result.success('✅'),
-      failure: Result.failure('💥'),
+      expect(sut).toFailWith('💥');
     });
 
-    await expect(result.isFailure).resolves.toEqual(true);
-    await expect(result.getErrorOrThrow()).resolves.toEqual('💥');
-  });
+    it('succeeds with one successful Result', async () => {
+      const sut = await ResultAsync.combine({
+        success: Result.success('✅'),
+      }).toPromise();
 
-  it('fails with one successful and one failed ResultAsync', async () => {
-    const result = ResultAsync.combine({
-      result: Result.success('✅'),
-      promise: Promise.resolve('✅'),
-      resultAsync: ResultAsync.failure('💥'),
+      expect(sut).toSucceedWith({
+        success: '✅',
+      });
     });
 
-    await expect(result.isFailure).resolves.toEqual(true);
-    await expect(result.getErrorOrThrow()).resolves.toEqual('💥');
+    it('succeeds with two successful Results', async () => {
+      const sut = await ResultAsync.combine({
+        first: Result.success('✅'),
+        second: Result.success('✅'),
+      }).toPromise();
+
+      expect(sut).toSucceedWith({
+        first: '✅',
+        second: '✅',
+      });
+    });
+
+    it('fails with one failed Result', async () => {
+      const sut = await ResultAsync.combine({
+        failure: Result.failure('💥'),
+      }).toPromise();
+
+      expect(sut).toFailWith('💥');
+    });
+
+    it('fails with one successful and one failed Result', async () => {
+      const sut = await ResultAsync.combine({
+        success: Result.success('✅'),
+        failure: Result.failure('💥'),
+      }).toPromise();
+
+      expect(sut).toFailWith('💥');
+    });
+
+    it('fails with mixed types when one fails', async () => {
+      const sut = await ResultAsync.combine({
+        sut: Result.success('✅'),
+        promise: Promise.resolve('✅'),
+        sutAsync: ResultAsync.failure('💥'),
+      }).toPromise();
+
+      expect(sut).toFailWith('💥');
+    });
   });
 });
