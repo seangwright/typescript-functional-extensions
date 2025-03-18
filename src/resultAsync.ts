@@ -47,9 +47,7 @@ export class ResultAsync<TValue = Unit, TError = string> {
   static combine<T extends Record<string, ResultAsync<unknown>>>(
     results: T
   ): ResultAsync<{ [K in keyof T]: ResultAsyncValueOf<T[K]> }> {
-    const promises = Object.values(results).map((result) =>
-      result.toPromise().catch((reason) => new PromiseRejection(reason))
-    );
+    const promises = Object.values(results).map((result) => result.toPromise());
 
     const allPromises = Promise.all(promises).then((promiseResults) => {
       const valuesAndErrors = Object.keys(results).reduce(
