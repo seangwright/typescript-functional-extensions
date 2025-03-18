@@ -23,10 +23,10 @@ import {
 } from './utilities.js';
 
 /**
- * Allows to extract the Value of the given "operation"
- * An operation can be a Result, ResultAsync or a Promise
+ * Allows to extract the Value of the given `Result` or `ResultAsync`
  *
  * @example ResultValue<Result<string>> => string
+ * @example ResultValue<ResultAsync<string>> => string
  */
 export type ResultValue<T> = T extends Result<infer TResultValue>
   ? TResultValue
