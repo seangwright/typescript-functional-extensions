@@ -23,12 +23,20 @@ import {
 } from './utilities.js';
 
 /**
- * Allows to extract the Value of the given Result-Type
- * e.g. ResultValueOf<Result<string>> => string
+ * Allows to extract the Value of the given `Result` or `ResultAsync`
+ *
+ * @example ResultValue<Result<string>> => string
+ * @example ResultValue<ResultAsync<string>> => string
  */
-export type ResultValueOf<T> = T extends Result<infer TResultValue>
+export type ResultValue<T> = T extends Result<infer TResultValue>
   ? TResultValue
-  : unknown;
+  : T extends ResultAsync<infer TResultAsyncValue>
+  ? TResultAsyncValue
+  : never;
+
+export type ResultRecord<TResultRecord> = {
+  [K in keyof TResultRecord]: ResultValue<TResultRecord[K]>;
+};
 
 /**
  * Represents a successful Result operation.
@@ -55,9 +63,9 @@ export class Result<TValue = Unit, TError = string> {
    * @param results The Results to be combined.
    * @returns A Result that is a success when all the input results are also successes.
    */
-  static combine<T extends Record<string, Result<unknown>>>(
-    results: T
-  ): Result<{ [K in keyof T]: ResultValueOf<T[K]> }> {
+  static combine<TResultRecord extends Record<string, Result<unknown>>>(
+    results: TResultRecord
+  ): Result<ResultRecord<TResultRecord>> {
     const resultEntries = Object.entries(results);
 
     const failedResults = resultEntries.filter(
@@ -74,7 +82,9 @@ export class Result<TValue = Unit, TError = string> {
       }, {} as { [key: string]: unknown });
 
       return Result.success(
-        values as Some<{ [K in keyof T]: ResultValueOf<T[K]> }>
+        values as Some<{
+          [K in keyof TResultRecord]: ResultValue<TResultRecord[K]>;
+        }>
       );
     }
 
@@ -83,6 +93,12 @@ export class Result<TValue = Unit, TError = string> {
       .join(', ');
 
     return Result.failure(errorMessages);
+  }
+
+  static combineInOrderAsync<
+    TResultRecord extends Record<string, Result<unknown> | ResultAsync<unknown>>
+  >(record: TResultRecord): ResultAsync<ResultRecord<TResultRecord>> {
+    return ResultAsync.combineInOrder(record);
   }
 
   /**
@@ -692,7 +708,7 @@ export class Result<TValue = Unit, TError = string> {
   /**
    * Maps the value successful Result to a new async value wrapped in a ResultAsync
    * @param projection a function given the value of the current Result which returns a Promise of some value
-   
+
    * @returns
    */
   mapAsync<TNewValue>(
@@ -706,7 +722,7 @@ export class Result<TValue = Unit, TError = string> {
   /**
    * Maps the error of a failed Result to a new async value wrapped in a ResultAsync
    * @param projection a function given the error of the current Result which returns a Promise of some value
-   
+
    * @returns
    */
   mapFailureAsync(
@@ -733,7 +749,7 @@ export class Result<TValue = Unit, TError = string> {
   /**
    * Maps a successful Result to a new ResultAsync
    * @param projection
-   
+
    */
   bindAsync<TNewValue>(
     projection: FunctionOfTtoK<TValue, Promise<Result<TNewValue, TError>>>
@@ -748,7 +764,7 @@ export class Result<TValue = Unit, TError = string> {
   /**
    * Maps a successful Result to a new ResultAsync
    * @param projection
-   
+
    * @returns
    */
   bindAsync<TNewValue>(
@@ -856,7 +872,7 @@ export class Result<TValue = Unit, TError = string> {
   /**
    * Executes an async action if the Result succeeded
    * @param action a function given the Result's value returns a Promise
-   
+
    * @returns a ResultAsync
    */
   tapAsync(action: AsyncActionOfT<TValue>): ResultAsync<TValue, TError> {
