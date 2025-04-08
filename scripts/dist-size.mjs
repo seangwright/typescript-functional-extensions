@@ -4,14 +4,13 @@ import { dirname, join } from 'node:path';
 import { promisify } from 'node:util';
 import uglify from 'uglify-js';
 
-const root = join(dirname('../'), './dist/esm');
+const root = join(dirname('../'), './dist');
 
 const readdir = promisify(rd);
 const readfile = promisify(rf);
 
 const files = await readdir(root);
 
-const items = [];
 let total = 0;
 
 for (const file of files.filter((f) => f.endsWith('.js'))) {
