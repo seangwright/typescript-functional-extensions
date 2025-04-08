@@ -1,5 +1,7 @@
 {
   "type": "module",
+  "types": "./index.d.ts",
+  "module": "dist/index.js",
   "name": "typescript-functional-extensions",
   "description": "A TypeScript implementation of synchronous and asynchronous Maybe and Result monads",
   "keywords": [
@@ -25,15 +27,7 @@
   },
   "version": "2.0.0",
   "engines": {
-    "node": ">=18.12.1"
-  },
-  "main": "dist/cjs/index.js",
-  "module": "dist/esm/index.js",
-  "exports": {
-    ".": {
-      "import": "./dist/esm/index.js",
-      "require": "./dist/cjs/index.js"
-    }
+    "node": ">=22"
   },
   "files": [
     "/dist"
@@ -41,23 +35,23 @@
   "scripts": {
     "start": "tsc --watch",
     "prebuild": "trash dist",
-    "build": "tsc -p tsconfig.esm.json && tsc -p tsconfig.cjs.json",
-    "postbuild": "cpy package.cjs.json ./dist/cjs && cpy package.esm.json ./dist/esm",
+    "build": "tsc -p tsconfig.json",
+    "postbuild": "cpy package.json ./dist",
     "test": "vitest run",
     "test:watch": "vitest",
     "coverage": "vitest run --coverage",
     "report:size": "node ./scripts/dist-size.mjs"
   },
   "devDependencies": {
-    "@types/node": "18.16.3",
-    "@vitest/coverage-v8": "3.0.8",
+    "@types/node": "22.14.0",
+    "@vitest/coverage-v8": "3.1.1",
     "cpy-cli": "5.0.0",
     "gzip-size": "7.0.0",
-    "prettier": "2.8.8",
+    "prettier": "3.5.3",
     "trash-cli": "6.0.0",
-    "tslib": "2.5.0",
-    "typescript": "5.0.4",
-    "uglify-js": "3.17.4",
-    "vitest": "3.0.8"
+    "tslib": "2.8.1",
+    "typescript": "5.8.3",
+    "uglify-js": "3.19.3",
+    "vitest": "3.1.1"
   }
 }
