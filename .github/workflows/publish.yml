@@ -72,6 +72,13 @@ jobs:
         with:
           name: prerelease
 
+      - name: Extract package.json from artifact
+        run: |
+          mkdir -p extracted
+          tar -xzf *.tgz -C extracted
+          cp extracted/package/package.json ./package.json
+        shell: bash
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -93,6 +100,13 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: release
+
+      - name: Extract package.json from artifact
+        run: |
+          mkdir -p extracted
+          tar -xzf *.tgz -C extracted
+          cp extracted/package/package.json ./package.json
+        shell: bash
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
