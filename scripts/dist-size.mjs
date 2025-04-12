@@ -4,7 +4,7 @@ import { dirname, join } from 'node:path';
 import { promisify } from 'node:util';
 import uglify from 'uglify-js';
 
-const root = join(dirname('../'), './dist');
+const root = join(dirname('../'), './dist/esm');
 
 const readdir = promisify(rd);
 const readfile = promisify(rf);

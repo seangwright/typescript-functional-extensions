@@ -37,19 +37,19 @@ npm i typescript-functional-extensions
 
 #### Full distributed source
 
-<https://unpkg.com/browse/typescript-functional-extensions@2.0.0/>
+<https://unpkg.com/browse/typescript-functional-extensions@3.0.0/>
 
 #### ES Modules
 
-<https://unpkg.com/typescript-functional-extensions@version/dist/file>
+<https://unpkg.com/typescript-functional-extensions@version/dist/esm/file>
 
 Example:
 
-<https://unpkg.com/typescript-functional-extensions@2.0.0/dist/maybe.js>
+<https://unpkg.com/typescript-functional-extensions@3.0.0/dist/esm/maybe.js>
 
 ```javascript
 const { Maybe } = await import(
-  'https://unpkg.com/typescript-functional-extensions@2.0.0/dist/maybe.js'
+  'https://unpkg.com/typescript-functional-extensions@3.0.0/dist/esm/maybe.js'
 );
 
 const maybe = Maybe.some('test');

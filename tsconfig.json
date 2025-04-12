@@ -1,28 +1,8 @@
 {
+  "extends": "./tsconfig.esm.json",
+  "include": ["**/*.ts", "**/*.d.ts"],
   "compilerOptions": {
-    "baseUrl": ".",
-    "module": "NodeNext",
-    "moduleResolution": "nodenext",
-    "declaration": true,
-    "outDir": "./dist",
-    "emitDecoratorMetadata": true,
-    "experimentalDecorators": true,
-    "esModuleInterop": true,
-    "target": "ES2022",
-    "strict": true,
-    "noImplicitAny": true,
-    "noImplicitReturns": true,
-    "noImplicitThis": true,
-    "noImplicitOverride": true,
-    "noFallthroughCasesInSwitch": true,
-    "forceConsistentCasingInFileNames": true,
-    "importHelpers": true,
-    "paths": {
-      "@/src/*": ["src/*"]
-    },
-    "lib": ["ES2022", "dom"],
+    "outDir": "dist/esm",
     "types": ["vitest/globals"]
-  },
-  "exclude": ["node_modules", "dist"],
-  "include": ["src"]
+  }
 }

@@ -1,7 +1,5 @@
 {
   "type": "module",
-  "types": "./index.d.ts",
-  "module": "dist/index.js",
   "name": "typescript-functional-extensions",
   "description": "A TypeScript implementation of synchronous and asynchronous Maybe and Result monads",
   "keywords": [
@@ -29,21 +27,29 @@
   "engines": {
     "node": ">=22.0.0"
   },
+  "main": "dist/cjs/index.js",
+  "module": "dist/esm/index.js",
+  "exports": {
+    ".": {
+      "import": "./dist/esm/index.js",
+      "require": "./dist/cjs/index.js"
+    }
+  },
   "files": [
     "/dist"
   ],
   "scripts": {
     "start": "tsc --watch",
     "prebuild": "trash dist",
-    "build": "tsc -p tsconfig.json",
-    "postbuild": "cpy package.json ./dist",
+    "build": "tsc -p tsconfig.esm.json && tsc -p tsconfig.cjs.json",
+    "postbuild": "cpy package.cjs.json ./dist/cjs && cpy package.esm.json ./dist/esm",
     "test": "vitest run",
     "test:watch": "vitest",
     "coverage": "vitest run --coverage",
     "report:size": "node ./scripts/dist-size.mjs"
   },
   "devDependencies": {
-    "@types/node": "22.14.0",
+    "@types/node": "22.14.1",
     "@vitest/coverage-v8": "3.1.1",
     "cpy-cli": "5.0.0",
     "gzip-size": "7.0.0",
