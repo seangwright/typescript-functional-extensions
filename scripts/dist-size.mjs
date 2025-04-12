@@ -11,7 +11,6 @@ const readfile = promisify(rf);
 
 const files = await readdir(root);
 
-const items = [];
 let total = 0;
 
 for (const file of files.filter((f) => f.endsWith('.js'))) {
