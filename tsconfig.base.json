@@ -1,14 +1,12 @@
 {
   "compilerOptions": {
     "baseUrl": ".",
-    "module": "ES2022",
-    "moduleResolution": "node",
     "declaration": true,
     "outDir": "./dist",
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "esModuleInterop": true,
-    "target": "ES2020",
+    "target": "ES2022",
     "strict": true,
     "noImplicitAny": true,
     "noImplicitReturns": true,
@@ -16,11 +14,13 @@
     "noImplicitOverride": true,
     "noFallthroughCasesInSwitch": true,
     "forceConsistentCasingInFileNames": true,
+    "useDefineForClassFields": true,
     "importHelpers": true,
+    "skipLibCheck": true,
     "paths": {
       "@/src/*": ["src/*"]
     },
-    "lib": ["es2020", "dom"]
+    "lib": ["es2022", "dom"]
   },
   "exclude": ["node_modules", "dist"],
   "include": ["src"]

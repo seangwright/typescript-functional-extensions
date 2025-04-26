@@ -37,7 +37,7 @@ npm i typescript-functional-extensions
 
 #### Full distributed source
 
-<https://unpkg.com/browse/typescript-functional-extensions@2.0.0/>
+<https://unpkg.com/browse/typescript-functional-extensions@3.0.0/>
 
 #### ES Modules
 
@@ -45,11 +45,11 @@ npm i typescript-functional-extensions
 
 Example:
 
-<https://unpkg.com/typescript-functional-extensions@2.0.0/dist/esm/maybe.js>
+<https://unpkg.com/typescript-functional-extensions@3.0.0/dist/esm/maybe.js>
 
 ```javascript
 const { Maybe } = await import(
-  'https://unpkg.com/typescript-functional-extensions@2.0.0/dist/esm/maybe.js'
+  'https://unpkg.com/typescript-functional-extensions@3.0.0/dist/esm/maybe.js'
 );
 
 const maybe = Maybe.some('test');
@@ -61,15 +61,15 @@ The distributed library is currently not minified. Below are the module sizes wh
 
 - api.js: 0.15 kb
 - index.js: 0.09 kb
-- maybe.js: 0.81 kb
-- maybe.utilities.js: 0.27 kb
+- maybe.js: 0.82 kb
+- maybe.utilities.js: 0.26 kb
 - maybeAsync.js: 0.64 kb
-- result.js: 1.28 kb
-- resultAsync.js: 0.76 kb
+- result.js: 1.32 kb
+- resultAsync.js: 0.99 kb
 - unit.js: 0.13 kb
 - utilities.js: 0.27 kb
 
-Total: 4.39 kb
+Total: 4.66 kb
 
 ### Core Monads
 
@@ -267,8 +267,7 @@ See more examples of `ResultAsync` [in the docs](./docs/resultAsync.md) or [in t
 
 ## Contributing
 
-To build this project, you must have v18.12.1 or higher
-of the [Node.js](https://nodejs.org/dist/v18.12.1/node-v18.12.1-x64.msi) installed.
+To build this project, you must have v22.14.0 or higher of [Node.js](https://nodejs.org/en/download) installed.
 
 If you've found a bug or have a feature request, please [open an issue](https://github.com/seangwright/typescript-functional-extensions/issues/new) on GitHub.
 

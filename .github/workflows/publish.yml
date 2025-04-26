@@ -14,18 +14,15 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
-
-      - name: Set Environment Variables
-        uses: ./.github/actions/set-env
+      - uses: actions/checkout@v4
 
       - name: Set Package Version Environment Variable
         uses: ./.github/actions/set-package-version
 
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version-file: 'package.json'
 
       - name: Install dependencies
         run: npm ci --ignore-scripts
@@ -47,7 +44,7 @@ jobs:
         run: npm pack --pack-destination ./artifacts/release
 
       - name: 'Save release artifact'
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: release
           path: ./artifacts/release/*
@@ -59,7 +56,7 @@ jobs:
         run: npm pack --pack-destination ./artifacts/prerelease
 
       - name: 'Save prerelease artifact'
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: prerelease
           path: ./artifacts/prerelease/*
@@ -71,14 +68,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Download artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: prerelease
 
+      - name: Extract package.json from artifact
+        run: |
+          mkdir -p extracted
+          tar -xzf *.tgz -C extracted
+          cp extracted/package/package.json ./package.json
+        shell: bash
+
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version-file: 'package.json'
           registry-url: 'https://registry.npmjs.org'
 
       - name: Publish npm Package
@@ -93,14 +97,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Download artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: release
 
+      - name: Extract package.json from artifact
+        run: |
+          mkdir -p extracted
+          tar -xzf *.tgz -C extracted
+          cp extracted/package/package.json ./package.json
+        shell: bash
+
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version-file: 'package.json'
           registry-url: 'https://registry.npmjs.org'
 
       - name: Publish npm Package

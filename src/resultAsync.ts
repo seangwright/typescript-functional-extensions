@@ -27,6 +27,46 @@ export class ResultAsync<TValue = Unit, TError = string> {
    * Combines several results (and any error messages) into a single result.
    * The returned result will be a failure if any of the input results are failures.
    *
+   * @param results The Results to be combined.
+   * @returns A Result that is a success when all the input results are also successes.
+   */
+  static combine<
+    TResultRecord extends Record<string, Result<unknown> | ResultAsync<unknown>>
+  >(results: TResultRecord): ResultAsync<ResultRecord<TResultRecord>> {
+    const promises = Object.values(results).map((result) =>
+      result instanceof Result ? Promise.resolve(result) : result.toPromise()
+    );
+    const promiseResult = Promise.all(promises).then((resolvedResults) => {
+      const valuesAndErrors = Object.keys(results).reduce(
+        (sink, key, index) => {
+          const resolvedResult = resolvedResults[index];
+
+          resolvedResult.isSuccess
+            ? (sink.values[key] = resolvedResult.getValueOrThrow())
+            : sink.errors.push(resolvedResult.getErrorOrThrow());
+
+          return sink;
+        },
+        {
+          errors: [],
+          values: {},
+        } as { errors: string[]; values: { [key: string]: unknown } }
+      );
+
+      return valuesAndErrors.errors.length
+        ? Result.failure(valuesAndErrors.errors.join(', '))
+        : Result.success(valuesAndErrors.values);
+    });
+
+    return ResultAsync.from(
+      promiseResult as Promise<Result<ResultRecord<TResultRecord>>>
+    );
+  }
+  
+  /**
+   * Combines several results (and any error messages) into a single result.
+   * The returned result will be a failure if any of the input results are failures.
+   *
    * Asynchronous operations are executed one after another.
    *
    * @param results The Results to be combined.

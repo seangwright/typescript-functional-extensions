@@ -1,6 +1,6 @@
 name: 'Set package.json version environment variable'
 
-description: 'Sets the current npm package version a workflow'
+description: 'Sets the current npm package version in a workflow'
 
 runs:
   using: 'composite'
