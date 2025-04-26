@@ -65,11 +65,11 @@ The distributed library is currently not minified. Below are the module sizes wh
 - maybe.utilities.js: 0.26 kb
 - maybeAsync.js: 0.64 kb
 - result.js: 1.32 kb
-- resultAsync.js: 0.92 kb
+- resultAsync.js: 0.99 kb
 - unit.js: 0.13 kb
 - utilities.js: 0.27 kb
 
-Total: 4.59 kb
+Total: 4.66 kb
 
 ### Core Monads
 
